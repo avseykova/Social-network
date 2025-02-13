@@ -2,7 +2,6 @@ import dotenv from "dotenv"
 dotenv.config()
 import express from "express"
 import cors from "cors"
-import cookieParser from "cookie-parser"
 import mongoose from "mongoose"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
@@ -23,8 +22,8 @@ app.use(express.json())
 
 mongoose
   .connect(MONGO_URI)
-  .then(() => console.log(" Подключено к MongoDB"))
-  .catch((err) => console.error(" Ошибка подключения к MongoDB:", err))
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err))
 
 app.post("/api/register", async (req, res) => {
   try {
@@ -32,9 +31,9 @@ app.post("/api/register", async (req, res) => {
 
     const existingUser = await User.findOne({ email })
     if (existingUser)
-      return res.status(400).json({ error: "Email уже зарегистрирован" })
+      return res.status(400).json({ error: "Email is already registered" })
 
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10)
     const hashedPassword = await bcrypt.hash(password, salt)
 
     const newUser = new User({
@@ -43,16 +42,16 @@ app.post("/api/register", async (req, res) => {
       password_hash: hashedPassword,
     })
 
-    await newUser.save();
-    res.status(201).json({ message: "Регистрация успешна" })
+    await newUser.save()
+    res.status(201).json({ message: "Registration successful" })
   } catch (error) {
-    res.status(500).json({ error: "Ошибка сервера" })
+    res.status(500).json({ error: "Server error" })
   }
 })
 
 const start = async () => {
   try {
-    app.listen(PORT, () => console.log("ок"))
+    app.listen(PORT, () => console.log("Server started"))
   } catch (e) {
     console.log(e)
   }
