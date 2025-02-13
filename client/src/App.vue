@@ -1,11 +1,15 @@
 <script setup>
-import Register from "./pages/auth/Register.vue"; 
+import Registration from "./pages/auth/Registration.vue";
+
+
 </script>
 
 <template>
   <div>
-    <Register />
+    <Registration/>
 </div>
+
+
 </template>
 
 <style scoped>
