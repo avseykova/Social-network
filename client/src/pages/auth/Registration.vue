@@ -3,6 +3,9 @@ import { ref } from "vue";
 import { API_BASE_URL } from "../../config/config.ts";
 import type { IUserRegister } from "@/types/user.ts";
 import type { IApiResponse } from "@/types/api.ts";
+import { validationRules } from "../../resources/validation.ts";
+import { messages } from "../../resources/messages.ts";
+
 
 const username = ref<string>('');
 const email = ref<string>('');
@@ -10,19 +13,6 @@ const password = ref<string>('');
 const message = ref<string>('');
 const isError = ref<boolean>(false);
 
-const PASSWORD_MIN_LENGTH = 6;
-const PASSWORD_MAX_LENGTH = 20;
-
-const rules = {
-  required: (v: string) => !!v || 'This field is required',
-  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Enter a valid email',
-  minLength: (v: string) =>
-    v.length >= PASSWORD_MIN_LENGTH ||
-    `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
-  maxLength: (v: string) =>
-    v.length <= PASSWORD_MAX_LENGTH ||
-    `Password must be at most ${PASSWORD_MAX_LENGTH} characters`,
-};
 
 const vOnRegister = async (): Promise<void> => {
   message.value = '';
@@ -49,9 +39,9 @@ const vOnRegister = async (): Promise<void> => {
       );
     }
 
-    message.value = data.message || 'Registration successful!';
+    message.value = data.message || messages.loginSuccess;
   } catch (error) {
-    message.value = error instanceof Error ? error.message : 'Network error';
+    message.value = error instanceof Error ? error.message : messages.networkError;
     isError.value = true;
   }
 };
@@ -67,14 +57,14 @@ const vOnRegister = async (): Promise<void> => {
           <v-text-field
             v-model="username"
             label="Username"
-            :rules="[rules.required, rules.maxLength]"
+            :rules="[validationRules.required, validationRules.maxLength]"
             prepend-inner-icon="mdi-account"
           />
 
           <v-text-field
             v-model="email"
             label="Email"
-            :rules="[rules.required, rules.email, rules.maxLength]"
+            :rules="[validationRules.required, validationRules.email, validationRules.maxLength]"
             prepend-inner-icon="mdi-email"
           />
 
@@ -82,16 +72,16 @@ const vOnRegister = async (): Promise<void> => {
             v-model="password"
             label="Password"
             type="password"
-            :rules="[rules.required, rules.minLength, rules.maxLength]"
+            :rules="[validationRules.required, validationRules.minLength, validationRules.maxLength]"
             prepend-inner-icon="mdi-lock"
           />
 
-          <v-btn type="submit" block color="primary" class="mt-4">
+          <v-btn class="mt-4" type="submit" block color="primary" >
             Register
           </v-btn>
         </v-form>
 
-        <v-alert v-if="message" :type="isError ? 'error' : 'success'" class="mt-4">
+        <v-alert class="mt-4" v-if="message" :type="isError ? 'error' : 'success'" >
           {{ message }}
         </v-alert>
       </v-card-text>

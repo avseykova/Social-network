@@ -2,16 +2,15 @@
 import { ref } from "vue";
 import { API_BASE_URL } from "../../config/config.ts";
 import type { IApiResponse } from "@/types/api.ts";
+import { validationRules } from "../../resources/validation.ts";
+import { messages } from "../../resources/messages.ts";
+
 
 const email = ref<string>('');
 const password = ref<string>('');
 const message = ref<string>('');
 const isError = ref<boolean>(false);
 
-const rules = {
-  required: (v: string) => !!v || 'This field is required',
-  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Enter a valid email',
-};
 
 const vOnLogin = async (): Promise<void> => {
   message.value = '';
@@ -30,9 +29,9 @@ const vOnLogin = async (): Promise<void> => {
       throw new Error(`Error ${response.status}: ${response.statusText} ${data.error}`);
     }
 
-    message.value = data.message || 'Login successful!';
+    message.value = data.message || messages.loginSuccess;
   } catch (error) {
-    message.value = error instanceof Error ? error.message : 'Network error';
+    message.value = error instanceof Error ? error.message : messages.networkError;
     isError.value = true;
   }
 };
@@ -49,7 +48,7 @@ const vOnLogin = async (): Promise<void> => {
           <v-text-field
             v-model="email"
             label="Email"
-            :rules="[rules.required, rules.email]"
+            :rules="[validationRules.required, validationRules.email]"
             prepend-inner-icon="mdi-email"
           />
 
@@ -57,16 +56,15 @@ const vOnLogin = async (): Promise<void> => {
             v-model="password"
             label="Password"
             type="password"
-            :rules="[rules.required]"
+            :rules="[validationRules.required]"
             prepend-inner-icon="mdi-lock"
           />
 
-          <v-btn type="submit" block color="primary" class="mt-4">
+          <v-btn class="mt-4" type="submit" block color="primary" >
             Login
           </v-btn>
         </v-form>
-
-        <v-alert v-if="message" :type="isError ? 'error' : 'success'" class="mt-4">
+        <v-alert class="mt-4" v-if="message" :type="isError ? 'error' : 'success'" >
           {{ message }}
         </v-alert>
       </v-card-text>
