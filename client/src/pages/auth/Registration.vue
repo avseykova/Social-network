@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { API_BASE_URL } from "../../config/config.ts";
-import type { IUserRegister } from "@/types/user.ts";
-import type { IApiResponse } from "@/types/api.ts";
-import { validationRules } from "../../resources/validation.ts";
-import { messages } from "../../resources/messages.ts";
+import type { IUserRegister } from "@/models/userRegister.ts";
+import type { IApiResponse } from "@/models/apiResponse.ts";
+import { validationRules } from "../../utils/validationRules.ts";
+import { strings } from "../../resources/strings.ts";
 
 
 const username = ref<string>('');
@@ -39,9 +39,9 @@ const vOnRegister = async (): Promise<void> => {
       );
     }
 
-    message.value = data.message || messages.loginSuccess;
+    message.value = data.message || strings.loginSuccess;
   } catch (error) {
-    message.value = error instanceof Error ? error.message : messages.networkError;
+    message.value = error instanceof Error ? error.message : strings.networkError;
     isError.value = true;
   }
 };

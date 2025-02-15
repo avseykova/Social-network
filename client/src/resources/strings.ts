@@ -1,4 +1,4 @@
-export const messages = {
+export const strings = {
     loginSuccess: 'Login successful',
     networkError: 'Network error',
   };
