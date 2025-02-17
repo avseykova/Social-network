@@ -5,6 +5,8 @@ import type { IUserRegister } from "@/models/userRegister.ts";
 import type { IApiResponse } from "@/models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
+import { navigateTo } from '../../router/routerService';
+import { Pages } from "../../utils/pages.ts";
 
 
 const username = ref<string>('');
@@ -40,6 +42,8 @@ const vOnRegister = async (): Promise<void> => {
     }
 
     message.value = data.message || strings.loginSuccess;
+    navigateTo(Pages.Login)
+
   } catch (error) {
     message.value = error instanceof Error ? error.message : strings.networkError;
     isError.value = true;
@@ -79,6 +83,11 @@ const vOnRegister = async (): Promise<void> => {
           <v-btn class="mt-4" type="submit" block color="primary" >
             Register
           </v-btn>
+
+          <router-link to="/login" class="d-block text-center mt-4 text-primary text-decoration-none">
+            Login
+          </router-link>
+
         </v-form>
 
         <v-alert class="mt-4" v-if="message" :type="isError ? 'error' : 'success'" >

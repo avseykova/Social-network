@@ -1,12 +1,10 @@
 <script setup>
-import Registration from "./pages/auth/Registration.vue";
-import Login from "./pages/auth/Login.vue";
 </script>
 
 <template>
-  <div>
-    <Login />
-  </div>
+  <v-app>
+    <v-container>
+      <router-view />
+    </v-container>
+  </v-app>
 </template>
-
-<style scoped></style>

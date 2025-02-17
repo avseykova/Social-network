@@ -63,6 +63,13 @@ const vOnLogin = async (): Promise<void> => {
           <v-btn class="mt-4" type="submit" block color="primary" >
             Login
           </v-btn>
+
+          <router-link to="/registration" class="d-block text-center mt-4 text-primary text-decoration-none">
+  Registration
+</router-link>
+
+
+
         </v-form>
         <v-alert class="mt-4" v-if="message" :type="isError ? 'error' : 'success'" >
           {{ message }}
