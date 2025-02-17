@@ -1,19 +1,10 @@
 <script setup>
-import Registration from "./pages/auth/Registration.vue";
-
-
 </script>
 
 <template>
-  <div>
-    <Registration/>
-</div>
-
-
+  <v-app>
+    <v-container>
+      <router-view />
+    </v-container>
+  </v-app>
 </template>
-
-<style scoped>
-
-</style>
-
-

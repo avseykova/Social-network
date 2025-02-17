@@ -1,74 +1,54 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { API_BASE_URL } from "../../config/config.ts";
-import type { IUserRegister } from "@/models/userRegister.ts";
 import type { IApiResponse } from "@/models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
-import { navigateTo } from '../../router/routerService';
-import { Pages } from "../../utils/pages.ts";
 
 
-const username = ref<string>('');
 const email = ref<string>('');
 const password = ref<string>('');
 const message = ref<string>('');
 const isError = ref<boolean>(false);
 
 
-const vOnRegister = async (): Promise<void> => {
+const vOnLogin = async (): Promise<void> => {
   message.value = '';
   isError.value = false;
 
   try {
-    const userData: IUserRegister = {
-      username: username.value.trim(),
-      email: email.value,
-      password: password.value,
-    };
-
-    const response = await fetch(`${API_BASE_URL}/register`, {
+    const response = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
+      body: JSON.stringify({ email: email.value, password: password.value }),
     });
 
     const data: IApiResponse = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        `Error ${response.status}: ${response.statusText} ${data.error}`
-      );
+      throw new Error(`Error ${response.status}: ${response.statusText} ${data.error}`);
     }
 
     message.value = data.message || strings.loginSuccess;
-    navigateTo(Pages.Login)
-
   } catch (error) {
     message.value = error instanceof Error ? error.message : strings.networkError;
     isError.value = true;
   }
 };
+
 </script>
 
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
     <v-card class="pa-6" width="300">
-      <v-card-title class="text-center text-h5">Registration</v-card-title>
+      <v-card-title class="text-center text-h5">Login</v-card-title>
 
       <v-card-text>
-        <v-form ref="form" @submit.prevent="vOnRegister">
-          <v-text-field
-            v-model="username"
-            label="Username"
-            :rules="[validationRules.required, validationRules.maxLength]"
-            prepend-inner-icon="mdi-account"
-          />
-
+        <v-form ref="form" @submit.prevent="vOnLogin">
           <v-text-field
             v-model="email"
             label="Email"
-            :rules="[validationRules.required, validationRules.email, validationRules.maxLength]"
+            :rules="[validationRules.required, validationRules.email]"
             prepend-inner-icon="mdi-email"
           />
 
@@ -76,20 +56,21 @@ const vOnRegister = async (): Promise<void> => {
             v-model="password"
             label="Password"
             type="password"
-            :rules="[validationRules.required, validationRules.minLength, validationRules.maxLength]"
+            :rules="[validationRules.required]"
             prepend-inner-icon="mdi-lock"
           />
 
           <v-btn class="mt-4" type="submit" block color="primary" >
-            Register
+            Login
           </v-btn>
 
-          <router-link to="/login" class="d-block text-center mt-4 text-primary text-decoration-none">
-            Login
-          </router-link>
+          <router-link to="/registration" class="d-block text-center mt-4 text-primary text-decoration-none">
+  Registration
+</router-link>
+
+
 
         </v-form>
-
         <v-alert class="mt-4" v-if="message" :type="isError ? 'error' : 'success'" >
           {{ message }}
         </v-alert>
