@@ -7,7 +7,7 @@ import User from "./models/User.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 const MONGO_URI = process.env.MONGO_URI;
 
 app.use(
@@ -59,13 +59,27 @@ app.post("/api/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ error: "Invalid email or password" });
 
-    res.json({ message: "Login successful" });
+    res.status(201).json({ message: "Login successful", username: user.username });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-const start = async () => {
+
+app.post("/api/user-info", async (req, res) => {
+  try {
+    const { username } = req.body;
+    const user = await User.findOne({ username });
+    if (!user)
+      return res.status(400).json({ error: "User not found" });
+
+    res.status(200).json({ username: user.username, email: user.email });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+const start = () => {
   try {
     app.listen(PORT, () => console.log("Server started on port", PORT));
   } catch (e) {

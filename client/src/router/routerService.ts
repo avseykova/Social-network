@@ -1,4 +1,4 @@
-import { type Router } from 'vue-router';
+import { type Router } from "vue-router";
 import { type IPage } from "../models/page";
 
 let router: Router | null = null;

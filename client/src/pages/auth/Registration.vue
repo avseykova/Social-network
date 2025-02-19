@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { API_BASE_URL } from "../../config/config.ts";
-import type { IUserRegister } from "@/models/userRegister.ts";
-import type { IApiResponse } from "@/models/apiResponse.ts";
+import type { IUserRegister } from "../../models/userRegister.ts";
+import type { IApiResponse } from "../../models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
-import { navigateTo } from '../../router/routerService';
+import { navigateTo } from "../../router/routerService";
 import { Pages } from "../../utils/pages.ts";
 
 
@@ -42,7 +42,7 @@ const vOnRegister = async (): Promise<void> => {
     }
 
     message.value = data.message || strings.loginSuccess;
-    navigateTo(Pages.Login)
+    setTimeout(() => navigateTo(Pages.Login), 500);
 
   } catch (error) {
     message.value = error instanceof Error ? error.message : strings.networkError;
@@ -84,7 +84,7 @@ const vOnRegister = async (): Promise<void> => {
             Register
           </v-btn>
 
-          <router-link to="/login" class="d-block text-center mt-4 text-primary text-decoration-none">
+          <router-link :to="Pages.Login.path" class="d-block text-center mt-4 text-primary text-decoration-none">
             Login
           </router-link>
 
