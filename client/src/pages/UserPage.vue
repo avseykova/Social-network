@@ -2,10 +2,11 @@
 import { ref, onMounted } from "vue";
 import { API_BASE_URL } from "../config/config.ts";
 import { strings } from "../resources/strings.ts";
-import { USER_KEY } from "../utils/constants.ts";
+import { DEFAULT_AVATAR, USER_KEY,LOCALHOST } from "../utils/constants.ts";
 import { navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
 import axios from "axios";
+
 
 const name = ref<string>('');
 const email = ref<string>('');
@@ -13,7 +14,7 @@ const message = ref<string>('');
 const isError = ref<boolean>(false);
 const vOndialog = ref<boolean>(false);
 const avatarUrl = ref<string>(
-  'http://localhost:5002/uploads/default_avatar.png'
+  DEFAULT_AVATAR
 );
 const selectedFile = ref<File | null>(null);
 const isUploading = ref<boolean>(false);
@@ -47,7 +48,7 @@ const fetchUser = async (): Promise<void> => {
       email.value = response.data.email;
       avatarUrl.value =
         response.data.avatarUrl ||
-        'http://localhost:5002/uploads/default_avatar.png';
+        DEFAULT_AVATAR;
     }
 
     message.value = strings.userPageLoaded;
@@ -60,7 +61,7 @@ const fetchUser = async (): Promise<void> => {
 
 const updateUserBD = async (username: string, avatarUrl: string) => {
   try {
-    const response = await axios.put('http://localhost:5002/updateuser', {
+    const response = await axios.put(`${LOCALHOST}/updateuser`, {
       username,
       avatarUrl,
     });
@@ -88,14 +89,14 @@ const uploadAvatar = async () => {
 
   try {
     const response = await axios.post(
-      'http://localhost:5002/profile/upload-avatar',
+      `${LOCALHOST}/profile/upload-avatar`,
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
       }
     );
 
-    avatarUrl.value = `http://localhost:5002${response.data.url}`;
+    avatarUrl.value = `${LOCALHOST}${response.data.url}`;
 
     await updateUserBD(name.value, avatarUrl.value);
   } catch (error) {
