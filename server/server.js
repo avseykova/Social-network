@@ -3,35 +3,132 @@ import cors from "cors";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import User from "./models/User.js";
+import { User } from "./models/User.js";
+import { Message } from "./models/Message.js";
+import { UserChat, Chat } from "./models/Chat.js";
 import profileRoutes from "./profileRoutes.js";
+import { createServer } from "http";
+import { Server as SocketIOServer } from "socket.io";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 const MONGO_URI = process.env.MONGO_URI;
-
-app.use(
-  cors({
-    origin: "http://localhost:5174",
-    methods: "GET,POST,PUT,DELETE",
-    credentials: true,
-  })
-);
+const corsData = {
+  origin: "http://localhost:5174",
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
+};
+app.use(cors(corsData));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
-app.use("/profile", profileRoutes);
+app.use("", profileRoutes);
 
 mongoose
   .connect(MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+const httpServer = createServer(app);
+
+const io = new SocketIOServer(httpServer, { cors: corsData });
+
+io.on("connection", (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
+  socket.on("joinRoom", (room) => {
+    socket.join(room);
+    console.log(`Socket ${socket.id} joined room ${room}`);
+  });
+
+  socket.on("chatMessage", async (message) => {
+    saveMessage(message);
+
+    try {
+      const user = await User.findById(message.user_id);
+      if (user) {
+        message.username = user.username;
+      } else {
+        message.username = "Неизвестный пользователь";
+      }
+    } catch (error) {
+      console.error("Ошибка при получении пользователя:", error);
+      message.username = "Ошибка";
+    }
+
+    io.to(message.chat_id).emit("chatMessage", message);
+    console.log(`Message in room ${message.chat_id} from ${message.username}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Ошибка при получении пользователей" });
+  }
+});
+
+app.post("/chats", async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) return res.status(400).json({ error: "user_id is required" });
+
+    const userChats = await UserChat.find({ user_id: user_id });
+
+    const allPartnersArrays = await Promise.all(
+      userChats.map(async (userChat) => {
+        const partners = await UserChat.find({
+          chat_id: userChat.chat_id,
+          user_id: { $ne: user_id },
+        });
+
+        const partnersWithInfo = await Promise.all(
+          partners.map(async (partner) => {
+            const user = await User.findById(partner.user_id).select(
+              "firstname surname avatar_url"
+            );
+            return {
+              receiver_id: user._id,
+              firstname: user ? user.firstname : "Unknown",
+              surname: user ? user.surname : "Unknown",
+              avatar_url: user ? user.avatar_url : "",
+            };
+          })
+        );
+        return partnersWithInfo;
+      })
+    );
+
+    const allPartners = allPartnersArrays.flat();
+
+    const uniquePartners = [];
+    const seen = new Set();
+    for (const partner of allPartners) {
+      const idStr = partner.receiver_id.toString();
+      if (!seen.has(idStr)) {
+        seen.add(idStr);
+        uniquePartners.push(partner);
+      }
+    }
+
+    res.json({ chats: uniquePartners });
+  } catch (error) {
+    console.error("Ошибка:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ username });
     if (existingUser)
       return res.status(400).json({ error: "Email is already registered" });
 
@@ -64,7 +161,11 @@ app.post("/api/login", async (req, res) => {
 
     res
       .status(201)
-      .json({ message: "Login successful", username: user.username });
+      .json({
+        message: "Login successful",
+        user_id: user.id,
+        email: user.email,
+      });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
@@ -72,12 +173,13 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/user-info", async (req, res) => {
   try {
-    const { username } = req.body;
-    const user = await User.findOne({ username });
+    const { user_id } = req.body;
+    const user = await User.findById(user_id);
     if (!user) return res.status(400).json({ error: "User not found" });
 
     res.status(200).json({
-      username: user.username,
+      firstname: user.firstname,
+      surname: user.surname,
       email: user.email,
       avatarUrl: user.avatar_url,
     });
@@ -88,17 +190,11 @@ app.post("/api/user-info", async (req, res) => {
 
 app.put("/updateuser", async (req, res) => {
   try {
-    const { username, avatarUrl } = req.body;
+    const { user_id, firstname, surname, avatarUrl } = req.body;
 
-    if (!username || !avatarUrl) {
-      return res
-        .status(400)
-        .json({ error: "userName и avatarUrl обязательны" });
-    }
-
-    const updatedUser = await User.findOneAndUpdate(
-      { username },
-      { avatar_url: avatarUrl, updated_at: Date.now() },
+    const updatedUser = await User.findByIdAndUpdate(
+      user_id,
+      { firstname, surname, avatar_url: avatarUrl, updated_at: Date.now() },
       { new: true }
     );
 
@@ -113,9 +209,178 @@ app.put("/updateuser", async (req, res) => {
   }
 });
 
+app.get("/api/messages", async (req, res) => {
+  const { user1, user2 } = req.query;
+  console.log(user1, user2);
+
+  if (!user1 || !user2) {
+    return res
+      .status(400)
+      .json({ error: "Необходимо передать оба идентификатора пользователей." });
+  }
+
+  try {
+    const userObjectId1 = new mongoose.Types.ObjectId(user1);
+    const userObjectId2 = new mongoose.Types.ObjectId(user2);
+
+    const chats = await UserChat.aggregate([
+      {
+        $match: {
+          user_id: { $in: [userObjectId1, userObjectId2] },
+        },
+      },
+      {
+        $group: {
+          _id: "$chat_id",
+          userIds: { $addToSet: "$user_id" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $match: {
+          count: 2,
+          userIds: { $all: [userObjectId1, userObjectId2] },
+        },
+      },
+    ]);
+
+    let directChats = [];
+    if (chats.length > 0) {
+      const chatIds = chats.map((c) => c._id);
+
+      directChats = await Chat.find({
+        _id: { $in: chatIds },
+        is_direct: true,
+      });
+    }
+
+    let chatId;
+
+    if (directChats.length === 0) {
+      const newChat = new Chat({ is_direct: true });
+      await newChat.save();
+      chatId = newChat._id;
+
+      const userChat1 = new UserChat({
+        user_id: userObjectId1,
+        chat_id: chatId,
+      });
+      const userChat2 = new UserChat({
+        user_id: userObjectId2,
+        chat_id: chatId,
+      });
+      await Promise.all([userChat1.save(), userChat2.save()]);
+
+      return res.json({ chatId, messages: [] });
+    } else {
+      chatId = directChats[0]._id;
+    }
+
+    const messages = await Message.find({ chat_id: chatId })
+      .sort({ created_at: 1 })
+      .populate({ path: "user_id", select: "username" });
+
+    const messagesWithUsername = messages.map((message) => ({
+      _id: message._id,
+      user_id: message.user_id._id,
+      username: message.user_id.username,
+      chat_id: message.chat_id,
+      content: message.content,
+      created_at: message.created_at,
+      updated_at: message.updated_at,
+    }));
+
+    return res.json({ chatId, messages: messagesWithUsername });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Внутренняя ошибка сервера." });
+  }
+});
+
+const saveMessage = async (message) => {
+  const { user_id, chat_id, content } = message;
+
+  if (!user_id || !chat_id || !content) {
+    console.log("Параметры user_id, chat_id и content обязательны.");
+    return;
+  }
+
+  try {
+    const chat = await Chat.findById(chat_id);
+    if (!chat) {
+      console.log("Чат не найден.");
+      return;
+    }
+
+    const newMessage = new Message({
+      user_id: new mongoose.Types.ObjectId(user_id),
+      chat_id: new mongoose.Types.ObjectId(chat_id),
+      content,
+    });
+
+    await newMessage.save();
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+import { Post } from "./models/Posts.js";
+
+app.post("/api/posts", async (req, res) => {
+  try {
+    console.log(req.body);
+    const { user_id, content, image_url } = req.body;
+
+    const newPost = new Post({ user_id, content, image_url });
+    await newPost.save();
+
+    const populatedPost = await Post.findById(newPost._id).populate(
+      "user_id",
+      "firstname surname"
+    );
+
+    res.status(201).json(populatedPost);
+  } catch (error) {
+    res.status(500).json({ error: "Ошибка при создании поста" });
+  }
+});
+
+app.get("/api/posts", async (req, res) => {
+  try {
+    const posts = await Post.find().populate("user_id", "firstname surname");
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ error: "Ошибка при получении постов" });
+  }
+});
+
+app.get("/api/posts/:userId", async (req, res) => {
+  try {
+    console.log(req.params.userId);
+
+    const posts = await Post.find({ user_id: req.params.userId })
+      .populate("user_id", "firstname surname")
+      .sort({ created_at: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error("Ошибка при получении постов пользователя:", error);
+    res.status(500).json({ error: "Ошибка при получении постов пользователя" });
+  }
+});
+
+app.delete("/api/posts/:postId", async (req, res) => {
+  try {
+    await Post.findByIdAndDelete(req.params.postId);
+    res.json({ message: "Пост удалён" });
+  } catch (error) {
+    res.status(500).json({ error: "Ошибка при удалении поста" });
+  }
+});
+
 const start = () => {
   try {
-    app.listen(PORT, () => console.log("Server started on port", PORT));
+    httpServer.listen(PORT, () => console.log("Server started on port", PORT));
   } catch (e) {
     console.log(e);
   }

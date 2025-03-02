@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { API_BASE_URL } from "../../config/config.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
 import { Pages } from "../../utils/pages.ts";
 import { navigateTo } from "../../router/routerService";
 import type { ILoginResponse } from "../../models/loginResponse.ts";
-import { USER_KEY } from "../../utils/constants.ts";
+import { USER_KEY, API_BASE_URL } from "../../utils/constants.ts";
 
 const email = ref<string>('');
 const password = ref<string>('');
@@ -27,15 +26,15 @@ const vOnLogin = async (): Promise<void> => {
 
     const data: ILoginResponse = await response.json();
 
-    if (!response.ok || !data.username) {
-      throw new Error(`Error ${response.status}: ${response.statusText} ${data.error} username: ${data.username}`);
+    if (!response.ok || !data.user_id) {
+      throw new Error(`Error ${response.status}: ${response.statusText} ${data.error} username: ${data.user_id}`);
     }
 
     message.value = data.message || strings.loginSuccess;
 
     setTimeout(() => navigateTo(Pages.UserPage), 500);
 
-    localStorage.setItem(USER_KEY, data.username!);
+    localStorage.setItem(USER_KEY, data.user_id!);
 
   } catch (error) {
     message.value = error instanceof Error ? error.message : strings.networkError;
@@ -71,7 +70,7 @@ const vOnLogin = async (): Promise<void> => {
             Login
           </v-btn>
 
-          <router-link :to="Pages.Registration.path" class="d-block text-center mt-4 text-primary text-decoration-none">
+          <router-link class="d-block text-center mt-4 text-primary text-decoration-none" :to="Pages.Registration.path">
             Registration
           </router-link>
 

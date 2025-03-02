@@ -1,3 +1,5 @@
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./constants";
+
 export const required = (v: string) => !!v || 'This field is required';
 export const email = (v: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Enter a valid email';
@@ -8,8 +10,7 @@ export const maxLength = (v: string) =>
   v.length <= PASSWORD_MAX_LENGTH ||
   `Password must be at most ${PASSWORD_MAX_LENGTH} characters`;
 
-const PASSWORD_MIN_LENGTH = 6;
-const PASSWORD_MAX_LENGTH = 20;
+
 
 export const validationRules = {
   required,

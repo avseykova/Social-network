@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { API_BASE_URL } from "../../config/config.ts";
 import type { IUserRegister } from "../../models/userRegister.ts";
 import type { IApiResponse } from "../../models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
 import { navigateTo } from "../../router/routerService";
 import { Pages } from "../../utils/pages.ts";
+import { API_BASE_URL } from "../../utils/constants.ts";
 
 
 const username = ref<string>('');
@@ -84,7 +84,7 @@ const vOnRegister = async (): Promise<void> => {
             Register
           </v-btn>
 
-          <router-link :to="Pages.Login.path" class="d-block text-center mt-4 text-primary text-decoration-none">
+          <router-link class="d-block text-center mt-4 text-primary text-decoration-none" :to="Pages.Login.path" >
             Login
           </router-link>
 
