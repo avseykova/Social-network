@@ -9,6 +9,7 @@ import { UserChat, Chat } from "./models/Chat.js";
 import profileRoutes from "./profileRoutes.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import { Post } from "./models/Posts.js";
 
 dotenv.config();
 const app = express();
@@ -42,7 +43,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("chatMessage", async (message) => {
-    saveMessage(message);
+    await saveMessage(message);
 
     try {
       const user = await User.findById(message.user_id);
@@ -60,10 +61,18 @@ io.on("connection", (socket) => {
     console.log(`Message in room ${message.chat_id} from ${message.username}`);
   });
 
+
+  
+
+
+
+
   socket.on("disconnect", () => {
     console.log(`Socket disconnected: ${socket.id}`);
   });
 });
+
+
 
 app.get("/users", async (req, res) => {
   try {
@@ -209,24 +218,24 @@ app.put("/updateuser", async (req, res) => {
   }
 });
 
-app.get("/api/messages", async (req, res) => {
-  const { user1, user2 } = req.query;
-  console.log(user1, user2);
 
-  if (!user1 || !user2) {
+
+app.get("/api/messages", async (req, res) => {
+  const { sender_id, receiver_id } = req.query;
+
+  if (!sender_id || !receiver_id) {
     return res
       .status(400)
       .json({ error: "Необходимо передать оба идентификатора пользователей." });
   }
 
   try {
-    const userObjectId1 = new mongoose.Types.ObjectId(user1);
-    const userObjectId2 = new mongoose.Types.ObjectId(user2);
-
+    const senderObjectId = new mongoose.Types.ObjectId(sender_id);
+    const receiverObjectId2 = new mongoose.Types.ObjectId(receiver_id);
     const chats = await UserChat.aggregate([
       {
         $match: {
-          user_id: { $in: [userObjectId1, userObjectId2] },
+          user_id: { $in: [senderObjectId, receiverObjectId2] },
         },
       },
       {
@@ -239,7 +248,7 @@ app.get("/api/messages", async (req, res) => {
       {
         $match: {
           count: 2,
-          userIds: { $all: [userObjectId1, userObjectId2] },
+          userIds: { $all: [senderObjectId, receiverObjectId2] },
         },
       },
     ]);
@@ -262,11 +271,11 @@ app.get("/api/messages", async (req, res) => {
       chatId = newChat._id;
 
       const userChat1 = new UserChat({
-        user_id: userObjectId1,
+        user_id: senderObjectId,
         chat_id: chatId,
       });
       const userChat2 = new UserChat({
-        user_id: userObjectId2,
+        user_id: receiverObjectId2,
         chat_id: chatId,
       });
       await Promise.all([userChat1.save(), userChat2.save()]);
@@ -278,12 +287,12 @@ app.get("/api/messages", async (req, res) => {
 
     const messages = await Message.find({ chat_id: chatId })
       .sort({ created_at: 1 })
-      .populate({ path: "user_id", select: "username" });
+      .populate({ path: "user_id", select: "firstname" });
 
     const messagesWithUsername = messages.map((message) => ({
       _id: message._id,
       user_id: message.user_id._id,
-      username: message.user_id.username,
+      username: message.user_id.firstname,
       chat_id: message.chat_id,
       content: message.content,
       created_at: message.created_at,
@@ -296,6 +305,8 @@ app.get("/api/messages", async (req, res) => {
     return res.status(500).json({ error: "Внутренняя ошибка сервера." });
   }
 });
+
+
 
 const saveMessage = async (message) => {
   const { user_id, chat_id, content } = message;
@@ -324,7 +335,76 @@ const saveMessage = async (message) => {
   }
 };
 
-import { Post } from "./models/Posts.js";
+
+  
+
+
+app.put('/api/messages/:messageId', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Сообщение не может быть пустым' });
+    }
+
+    const updatedMessage = await Message.findByIdAndUpdate(
+      req.params.messageId,
+      { content, updated_at: Date.now() },
+      { new: true }
+    ).populate('user_id', 'username'); // Загружаем username пользователя
+
+    if (!updatedMessage) {
+      return res.status(404).json({ error: 'Сообщение не найдено' });
+    }
+
+    // Создаём новый объект сообщения, добавляя username
+    const messageWithUsername = {
+      _id: updatedMessage._id,
+      chat_id: updatedMessage.chat_id,
+      user_id: updatedMessage.user_id._id,
+      username: updatedMessage.user_id?.username || 'Неизвестный пользователь', // Добавляем username
+      content: updatedMessage.content,
+      created_at: updatedMessage.created_at,
+      updated_at: updatedMessage.updated_at
+    };
+
+    console.log('Обновленный username:', messageWithUsername.username);
+
+    // Отправляем обновлённое сообщение через WebSocket
+    io.to(updatedMessage.chat_id.toString()).emit('messageUpdated', messageWithUsername);
+
+    res.json(messageWithUsername);
+  } catch (error) {
+    console.error('Ошибка при обновлении сообщения:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+
+
+
+app.delete('/api/messages/:messageId', async (req, res) => {
+  try {
+    const deletedMessage = await Message.findByIdAndDelete(req.params.messageId);
+
+    if (!deletedMessage) {
+      return res.status(404).json({ error: 'Сообщение не найдено' });
+    }
+
+    console.log("messageDeleted");
+    // Отправляем событие WebSocket о том, что сообщение удалено
+    io.to(deletedMessage.chat_id.toString()).emit('messageDeleted', deletedMessage._id);
+    console.log("messageDeleted2");
+
+    res.json({ message: 'Сообщение удалено' });
+  } catch (error) {
+    console.error('Ошибка при удалении сообщения:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+
+
 
 app.post("/api/posts", async (req, res) => {
   try {
