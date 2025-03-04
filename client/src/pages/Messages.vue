@@ -71,19 +71,14 @@ onMounted(async () => {
 const vOnSendMessage = async (): Promise<void> => {
   if (!newMessage.value.trim()) return;
 
-  if (editingMessage.value) {
-  editingMessage.value.content = newMessage.value;
-  socket.emit('messageUpdated', editingMessage.value);
-    
-  } else {
     const message: IChatMessage = {
       user_id: localStorage.getItem(USER_KEY)!,
       chat_id: chat_id.value,
       content: newMessage.value,
-    };
+    }
 
     socket.emit('chatMessage', message);
-  }
+  
 
   newMessage.value = '';
   await autoScroll();
@@ -103,15 +98,25 @@ const vOnEditMessage = async (): Promise<void> => {
   }
 };
 
-const vOneditMessage = (message: IChatMessageToView) => {
+const vOnSetEditingMessage = (message: IChatMessageToView) => {
   editingMessage.value = message;
   newMessage.value = message.content;
   
 };
 
-const vOndeleteMessage = async (messageId: string) => {
+const vOnDeleteMessage = async (messageId: string) => {
   socket.emit('messageDelete', messageId);
 };
+
+
+const vOnSendOrEditMessage = async (): Promise<void> => {
+  if (editingMessage.value) {
+    await vOnEditMessage();
+  } else {
+    await vOnSendMessage();
+  }
+};
+
 
 </script>
 <template>
@@ -132,7 +137,7 @@ const vOndeleteMessage = async (messageId: string) => {
                 icon 
                 small 
                 size="x-small" 
-                @click="vOneditMessage(msg)" 
+                @click="vOnSetEditingMessage(msg)" 
                 style="min-width: 24px; padding: 2px"
               >
                 <v-icon size="12">mdi-pencil</v-icon>
@@ -142,7 +147,7 @@ const vOndeleteMessage = async (messageId: string) => {
                 small 
                 size="x-small" 
                 color="red" 
-                @click="vOndeleteMessage(msg._id)" 
+                @click="vOnDeleteMessage(msg._id)" 
                 style="min-width: 24px; padding: 2px"
               >
                 <v-icon size="12">mdi-delete</v-icon>
@@ -163,9 +168,9 @@ const vOndeleteMessage = async (messageId: string) => {
           dense
           style="flex: 1"
         ></v-text-field>
-        <v-btn color="primary" @click="editingMessage ? vOnEditMessage() : vOnSendMessage()">
-  {{ editingMessage ? 'Обновить' : 'Отправить' }}
-</v-btn>
+        <v-btn color="primary" @click="vOnSendOrEditMessage">
+          {{ editingMessage ? 'Обновить' : 'Отправить' }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-container>
