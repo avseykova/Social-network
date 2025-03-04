@@ -38,8 +38,6 @@ const loadMessages = async (): Promise<void> => {
       params: { sender_id: sender_id, receiver_id: receiver_id },
     });
     messagesToView.value = response.data.messages;
-
-
     chat_id.value = response.data.chatId;
     await autoScroll();
   } catch (error) {
@@ -56,11 +54,11 @@ onMounted(async () => {
     await autoScroll();
   });
 
-  socket.on('messageUpdated', (updatedMessage: IChatMessageToView) => {
-    console.log(updatedMessage.username)
-    const index = messagesToView.value.findIndex(msg => msg._id === updatedMessage._id);
+  socket.on('messageUpdated', (message: IChatMessageToView) => {
+    console.log(message.username)
+    const index = messagesToView.value.findIndex(msg => msg._id === message._id);
     if (index !== -1) {
-      messagesToView.value[index] = updatedMessage; 
+      messagesToView.value[index] = message; 
     }
   });
 
@@ -70,12 +68,13 @@ onMounted(async () => {
   });
 });
 
-const vOnsendMessage = async (): Promise<void> => {
+const vOnSendMessage = async (): Promise<void> => {
   if (!newMessage.value.trim()) return;
 
   if (editingMessage.value) {
-    await axios.put(`${API_BASE_URL}/messages/${editingMessage.value._id}`, { content: newMessage.value });
-    editingMessage.value = null;
+  editingMessage.value.content = newMessage.value;
+  socket.emit('messageUpdated', editingMessage.value);
+    
   } else {
     const message: IChatMessage = {
       user_id: localStorage.getItem(USER_KEY)!,
@@ -91,17 +90,29 @@ const vOnsendMessage = async (): Promise<void> => {
 };
 
 
+const vOnEditMessage = async (): Promise<void> => {
+  if (!newMessage.value.trim() || !editingMessage.value) return;
 
-
+  try {
+    editingMessage.value.content = newMessage.value;
+    socket.emit('messageUpdated', editingMessage.value);
+    newMessage.value = '';
+    editingMessage.value = null; 
+  } catch (error) {
+    console.error("Ошибка при редактировании сообщения:", error);
+  }
+};
 
 const vOneditMessage = (message: IChatMessageToView) => {
   editingMessage.value = message;
   newMessage.value = message.content;
+  
 };
 
 const vOndeleteMessage = async (messageId: string) => {
-  await axios.delete(`${API_BASE_URL}/messages/${messageId}`);
+  socket.emit('messageDelete', messageId);
 };
+
 </script>
 <template>
   <v-container>
@@ -147,14 +158,14 @@ const vOndeleteMessage = async (messageId: string) => {
         <v-text-field
           v-model="newMessage"
           label="Введите сообщение..."
-          @keyup.enter="vOnsendMessage"
+          @keyup.enter="vOnSendMessage"
           outlined
           dense
           style="flex: 1"
         ></v-text-field>
-        <v-btn color="primary" @click="vOnsendMessage">
-          {{ editingMessage ? 'Обновить' : 'Отправить' }}
-        </v-btn>
+        <v-btn color="primary" @click="editingMessage ? vOnEditMessage() : vOnSendMessage()">
+  {{ editingMessage ? 'Обновить' : 'Отправить' }}
+</v-btn>
       </v-card-actions>
     </v-card>
   </v-container>

@@ -61,18 +61,37 @@ io.on("connection", (socket) => {
     console.log(`Message in room ${message.chat_id} from ${message.username}`);
   });
 
+  socket.on("messageUpdated", async (message) => {
+    const updatedMessage = await updateMessage(message);
+    try {
+      const user = await User.findById(updatedMessage.user_id);
+      if (user) {
+        updatedMessage.username = user.username;
+      }
+    } catch (error) {
+      console.error("Ошибка при получении пользователя:", error);
+    }
 
-  
+    io.to(updatedMessage.chat_id).emit("messageUpdated", updatedMessage);
+    console.log(
+      `Message in room ${updatedMessage.chat_id} from ${updatedMessage.username}`
+    );
+  });
 
+  socket.on("messageDelete", async (messageId) => {
+    const deletedMessage = await messageDelete(messageId);
 
-
+    io.to(deletedMessage.chat_id.toString()).emit(
+      "messageDeleted",
+      deletedMessage._id
+    );
+    console.log("messageDeleted");
+  });
 
   socket.on("disconnect", () => {
     console.log(`Socket disconnected: ${socket.id}`);
   });
 });
-
-
 
 app.get("/users", async (req, res) => {
   try {
@@ -168,13 +187,11 @@ app.post("/api/login", async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ error: "Invalid email or password" });
 
-    res
-      .status(201)
-      .json({
-        message: "Login successful",
-        user_id: user.id,
-        email: user.email,
-      });
+    res.status(201).json({
+      message: "Login successful",
+      user_id: user.id,
+      email: user.email,
+    });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
   }
@@ -217,8 +234,6 @@ app.put("/updateuser", async (req, res) => {
     res.status(500).json({ error: "Ошибка сервера" });
   }
 });
-
-
 
 app.get("/api/messages", async (req, res) => {
   const { sender_id, receiver_id } = req.query;
@@ -306,8 +321,6 @@ app.get("/api/messages", async (req, res) => {
   }
 });
 
-
-
 const saveMessage = async (message) => {
   const { user_id, chat_id, content } = message;
 
@@ -335,76 +348,47 @@ const saveMessage = async (message) => {
   }
 };
 
+const updateMessage = async (message) => {
+  const { content, _id } = message;
 
-  
+  if (!content || !_id) {
+    console.log("Параметры _id, content обязательны.");
+    return null;
+  }
 
-
-app.put('/api/messages/:messageId', async (req, res) => {
   try {
-    const { content } = req.body;
-
-    if (!content) {
-      return res.status(400).json({ error: 'Сообщение не может быть пустым' });
-    }
-
     const updatedMessage = await Message.findByIdAndUpdate(
-      req.params.messageId,
+      _id,
       { content, updated_at: Date.now() },
       { new: true }
-    ).populate('user_id', 'username'); // Загружаем username пользователя
+    );
 
     if (!updatedMessage) {
-      return res.status(404).json({ error: 'Сообщение не найдено' });
+      console.log("Сообщение не найдено.");
+      return null;
     }
 
-    // Создаём новый объект сообщения, добавляя username
-    const messageWithUsername = {
-      _id: updatedMessage._id,
-      chat_id: updatedMessage.chat_id,
-      user_id: updatedMessage.user_id._id,
-      username: updatedMessage.user_id?.username || 'Неизвестный пользователь', // Добавляем username
-      content: updatedMessage.content,
-      created_at: updatedMessage.created_at,
-      updated_at: updatedMessage.updated_at
-    };
-
-    console.log('Обновленный username:', messageWithUsername.username);
-
-    // Отправляем обновлённое сообщение через WebSocket
-    io.to(updatedMessage.chat_id.toString()).emit('messageUpdated', messageWithUsername);
-
-    res.json(messageWithUsername);
+    return updatedMessage;
   } catch (error) {
-    console.error('Ошибка при обновлении сообщения:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error("Ошибка при обновлении сообщения:", error);
+    return null;
   }
-});
+};
 
-
-
-
-app.delete('/api/messages/:messageId', async (req, res) => {
+const messageDelete = async (messageId) => {
   try {
-    const deletedMessage = await Message.findByIdAndDelete(req.params.messageId);
+    const deletedMessage = await Message.findByIdAndDelete(messageId);
 
     if (!deletedMessage) {
-      return res.status(404).json({ error: 'Сообщение не найдено' });
+      return { error: "Сообщение не найдено" };
     }
 
-    console.log("messageDeleted");
-    // Отправляем событие WebSocket о том, что сообщение удалено
-    io.to(deletedMessage.chat_id.toString()).emit('messageDeleted', deletedMessage._id);
-    console.log("messageDeleted2");
-
-    res.json({ message: 'Сообщение удалено' });
+    console.log("Сообщение удалено");
+    return deletedMessage;
   } catch (error) {
-    console.error('Ошибка при удалении сообщения:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error("Ошибка при удалении сообщения:", error);
   }
-});
-
-
-
+};
 
 app.post("/api/posts", async (req, res) => {
   try {
