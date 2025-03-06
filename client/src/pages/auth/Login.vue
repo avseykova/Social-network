@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { API_BASE_URL } from "../../config/config.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
 import { Pages } from "../../utils/pages.ts";
 import { navigateTo } from "../../router/routerService";
 import type { ILoginResponse } from "../../models/loginResponse.ts";
-import { USER_KEY } from "../../utils/constants.ts";
+import { USER_KEY, API_BASE_URL } from "../../utils/constants.ts";
+import axios from "axios";
 
 const email = ref<string>('');
 const password = ref<string>('');
@@ -19,27 +19,27 @@ const vOnLogin = async (): Promise<void> => {
   isError.value = false;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+    const response = await axios.post<ILoginResponse>(`${API_BASE_URL}/login`, {
+      email: email.value,
+      password: password.value
     });
 
-    const data: ILoginResponse = await response.json();
-
-    if (!response.ok || !data.username) {
-      throw new Error(`Error ${response.status}: ${response.statusText} ${data.error} username: ${data.username}`);
+    if (!response.data.user_id) {
+      throw new Error(`Ошибка: ${response.data.error || "Неизвестная ошибка"} username: ${response.data.user_id}`);
     }
 
-    message.value = data.message || strings.loginSuccess;
+    message.value = response.data.message || strings.loginSuccess;
 
-    setTimeout(() => navigateTo(Pages.UserPage), 500);
+    setTimeout(() => navigateTo(Pages.UserPage, { params: { id: response.data.user_id } }), 500);
 
-    localStorage.setItem(USER_KEY, data.username!);
+    localStorage.setItem(USER_KEY, response.data.user_id);
+    
+    console.log("Успешный вход:", response.data);
 
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : strings.networkError;
+  } catch (error: any) {
+    message.value = error.response?.data?.error || error.message || strings.networkError;
     isError.value = true;
+    console.error("Ошибка входа:", error);
   }
 };
 
@@ -71,7 +71,7 @@ const vOnLogin = async (): Promise<void> => {
             Login
           </v-btn>
 
-          <router-link :to="Pages.Registration.path" class="d-block text-center mt-4 text-primary text-decoration-none">
+          <router-link class="d-block text-center mt-4 text-primary text-decoration-none" :to="Pages.Registration.path">
             Registration
           </router-link>
 

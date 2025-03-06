@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/upload-avatar", upload.single("avatar"), (req, res) => {
+router.post("/upload", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "Файл не загружен" });
 
   const fileUrl = `/uploads/${req.file.filename}`;
