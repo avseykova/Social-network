@@ -23,9 +23,9 @@ const autoScroll = async () => {
   }, 100);
 };
 
-const joinRoom = (): void => {
+const messageRoom = (): void => {
   if (chat_id.value) {
-    socket.emit('joinRoom', chat_id.value);
+    socket.emit('messageRoom', chat_id.value);
   }
 };
 
@@ -44,29 +44,6 @@ const loadMessages = async (): Promise<void> => {
     console.error('Ошибка загрузки сообщений:', error);
   }
 };
-
-onMounted(async () => {
-  await loadMessages();
-  joinRoom();
-  
-  socket.on('chatMessage', async (message: IChatMessageToView) => {
-    messagesToView.value.push(message);
-    await autoScroll();
-  });
-
-  socket.on('messageUpdated', (message: IChatMessageToView) => {
-    console.log(message.username)
-    const index = messagesToView.value.findIndex(msg => msg._id === message._id);
-    if (index !== -1) {
-      messagesToView.value[index] = message; 
-    }
-  });
-
-  socket.on('messageDeleted', (messageId: string) => {
-    console.log("messageDeleted")
-    messagesToView.value = messagesToView.value.filter(msg => msg._id !== messageId);
-  });
-});
 
 const vOnSendMessage = async (): Promise<void> => {
   if (!newMessage.value.trim()) return;
@@ -116,6 +93,27 @@ const vOnSendOrEditMessage = async (): Promise<void> => {
     await vOnSendMessage();
   }
 };
+
+onMounted(async () => {
+  await loadMessages();
+  messageRoom();
+  
+  socket.on('chatMessage', async (message: IChatMessageToView) => {
+    messagesToView.value.push(message);
+    await autoScroll();
+  });
+
+  socket.on('messageUpdated', (message: IChatMessageToView) => {
+    const index = messagesToView.value.findIndex(msg => msg._id === message._id);
+    if (index !== -1) {
+      messagesToView.value[index] = message; 
+    }
+  });
+
+  socket.on('messageDeleted', (messageId: string) => {
+    messagesToView.value = messagesToView.value.filter(msg => msg._id !== messageId);
+  });
+});
 
 
 </script>

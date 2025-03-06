@@ -7,6 +7,7 @@ export interface IPost {
     };
     content: string;
     image_url?: string;
+    likes: string[];
     created_at: string;
     updated_at: string;
   }

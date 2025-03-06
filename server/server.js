@@ -9,7 +9,7 @@ import { UserChat, Chat } from "./models/Chat.js";
 import profileRoutes from "./profileRoutes.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
-import { Post } from "./models/Posts.js";
+import { Post } from "./models/Post.js";
 
 dotenv.config();
 const app = express();
@@ -35,11 +35,16 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, { cors: corsData });
 
 io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  
 
-  socket.on("joinRoom", (room) => {
+  socket.on("messageRoom", (room) => {
     socket.join(room);
     console.log(`Socket ${socket.id} joined room ${room}`);
+  });
+
+  socket.on("pageRoom", (room) => {
+    socket.join(room);
+    console.log(`Socket ${socket.id} joined postroom ${room}`);
   });
 
   socket.on("chatMessage", async (message) => {
@@ -91,6 +96,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(`Socket disconnected: ${socket.id}`);
   });
+
 });
 
 app.get("/users", async (req, res) => {
@@ -392,7 +398,6 @@ const messageDelete = async (messageId) => {
 
 app.post("/api/posts", async (req, res) => {
   try {
-    console.log(req.body);
     const { user_id, content, image_url } = req.body;
 
     const newPost = new Post({ user_id, content, image_url });
@@ -409,14 +414,6 @@ app.post("/api/posts", async (req, res) => {
   }
 });
 
-app.get("/api/posts", async (req, res) => {
-  try {
-    const posts = await Post.find().populate("user_id", "firstname surname");
-    res.json(posts);
-  } catch (error) {
-    res.status(500).json({ error: "Ошибка при получении постов" });
-  }
-});
 
 app.get("/api/posts/:userId", async (req, res) => {
   try {
@@ -440,6 +437,35 @@ app.delete("/api/posts/:postId", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: "Ошибка при удалении поста" });
   }
+});
+
+
+app.put("/api/posts/like", async (req, res) => {
+  try {
+    const { user_id, postId } = req.body;
+
+    
+
+    const post = await Post.findById(postId).populate("user_id", "firstname surname");
+    if (!post) return res.status(404).json({ message: "Пост не найден" });
+
+    const likeIndex = post.likes.indexOf(user_id);
+    
+    if (likeIndex === -1) {
+      post.likes.push(user_id); 
+    } else {
+      post.likes.splice(likeIndex, 1); 
+    }
+
+    await post.save();
+    io.to(user_id).emit("postUpdate", post);
+    res.json({ likes: post.likes });
+  } catch (error) {
+    console.error("Ошибка при лайке поста:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+
+ 
 });
 
 const start = () => {

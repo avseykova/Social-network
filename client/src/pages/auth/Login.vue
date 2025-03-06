@@ -6,6 +6,7 @@ import { Pages } from "../../utils/pages.ts";
 import { navigateTo } from "../../router/routerService";
 import type { ILoginResponse } from "../../models/loginResponse.ts";
 import { USER_KEY, API_BASE_URL } from "../../utils/constants.ts";
+import axios from "axios";
 
 const email = ref<string>('');
 const password = ref<string>('');
@@ -18,27 +19,27 @@ const vOnLogin = async (): Promise<void> => {
   isError.value = false;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+    const response = await axios.post<ILoginResponse>(`${API_BASE_URL}/login`, {
+      email: email.value,
+      password: password.value
     });
 
-    const data: ILoginResponse = await response.json();
-
-    if (!response.ok || !data.user_id) {
-      throw new Error(`Error ${response.status}: ${response.statusText} ${data.error} username: ${data.user_id}`);
+    if (!response.data.user_id) {
+      throw new Error(`Ошибка: ${response.data.error || "Неизвестная ошибка"} username: ${response.data.user_id}`);
     }
 
-    message.value = data.message || strings.loginSuccess;
+    message.value = response.data.message || strings.loginSuccess;
 
-    setTimeout(() => navigateTo(Pages.UserPage), 500);
+    setTimeout(() => navigateTo(Pages.UserPage, { params: { id: response.data.user_id } }), 500);
 
-    localStorage.setItem(USER_KEY, data.user_id!);
+    localStorage.setItem(USER_KEY, response.data.user_id);
+    
+    console.log("Успешный вход:", response.data);
 
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : strings.networkError;
+  } catch (error: any) {
+    message.value = error.response?.data?.error || error.message || strings.networkError;
     isError.value = true;
+    console.error("Ошибка входа:", error);
   }
 };
 

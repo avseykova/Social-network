@@ -7,6 +7,7 @@ import { strings } from "../../resources/strings.ts";
 import { navigateTo } from "../../router/routerService";
 import { Pages } from "../../utils/pages.ts";
 import { API_BASE_URL } from "../../utils/constants.ts";
+import axios from "axios";
 
 
 const username = ref<string>('');
@@ -27,26 +28,15 @@ const vOnRegister = async (): Promise<void> => {
       password: password.value,
     };
 
-    const response = await fetch(`${API_BASE_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
+    const response = await axios.post<IApiResponse>(`${API_BASE_URL}/register`, userData);
 
-    const data: IApiResponse = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        `Error ${response.status}: ${response.statusText} ${data.error}`
-      );
-    }
-
-    message.value = data.message || strings.loginSuccess;
+    message.value = response.data.message || strings.loginSuccess;
     setTimeout(() => navigateTo(Pages.Login), 500);
 
-  } catch (error) {
-    message.value = error instanceof Error ? error.message : strings.networkError;
+  } catch (error: any) {
+    message.value = error.response?.data?.error || error.message || strings.networkError;
     isError.value = true;
+    console.error("Ошибка регистрации:", error);
   }
 };
 </script>
