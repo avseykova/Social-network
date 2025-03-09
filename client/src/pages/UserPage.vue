@@ -11,7 +11,7 @@ import {
 import { navigateTo as navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
 import axios from "axios";
-import type { IPost } from "@/models/userPost.ts";
+import type { IPost } from "../models/userPost.ts";
 import { io, Socket } from 'socket.io-client';
 import { useRoute } from 'vue-router';
 
@@ -25,13 +25,14 @@ const newFirstname = ref<string>('');
 const surname = ref<string>('');
 const newSurname = ref<string>('');
 const posts = ref<IPost[]>([]);
+const subscriptions = ref<string[]>([]);
 const newPostContent = ref('');
 const newPostImage = ref<File | null>(null);
 const route = useRoute();
-const userId = ref<string | null>(route.params.id.toString());
+const userRecipient = ref<string | null>(route.params.id.toString());
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const socket: Socket = io(LOCALHOST);
-const itIsMe = ref<boolean>(userId.value == localStorage.getItem(USER_KEY));
-
+const itIsMe = ref<boolean>(userRecipient.value == localStorage.getItem(USER_KEY));
 
 
 const vOnhandleOk = async () => {
@@ -61,7 +62,7 @@ const vOnaddPost = async () => {
 
   try {
     const response = await axios.post<IPost>(`${API_BASE_URL}/posts`, {
-      user_id: userId.value,
+      user_id: userRecipient.value,
       content: newPostContent.value,
       image_url: imageUrl,
     });
@@ -98,16 +99,13 @@ const vOnHandleLogout = () => {
 const fetchUser = async (): Promise<void> => {
 
   try {
-    console.log(userId.value)
-    
-
-    if (!userId.value) {
+    if (!userRecipient.value) {
       navigateTo(Pages.Login);
       return;
     }
     const response = await axios.post(
       `${API_BASE_URL}/user-info`,
-      { user_id :userId.value  }
+      { user_id :userRecipient.value  }
     );
 
     if (response.data) {
@@ -116,6 +114,8 @@ const fetchUser = async (): Promise<void> => {
       email.value = response.data.email;
       avatarUrl.value = response.data.avatarUrl || DEFAULT_AVATAR;
       localStorage.setItem(FIRSTNAME_KEY, firstname.value);
+      subscriptions.value = response.data.subscriptions;
+
     }
 
     console.log(strings.userPageLoaded)
@@ -174,7 +174,6 @@ const vOnlikePost = async (post: IPost) => {
       user_id: post.user_id._id,
       postId: post._id,
     });
-    // post.likes = response.data.likes;
   } catch (error) {
     console.error('Ошибка при лайке поста:', error);
   }
@@ -191,9 +190,26 @@ const fetchPosts = async (userId: string | null) => {
   }
 };
 
+const vOnSubscribe = async () => {
+
+    try {
+    const response = await axios.put(`${API_BASE_URL}/subscribe`, {
+      userId: localStorage.getItem(USER_KEY),
+      pageId: userRecipient.value,
+    });
+    subscriptions.value = response.data.subscriptions;
+  } catch (error) {
+    console.error('Ошибка при лайке поста:', error);
+  }
+};
+const vOnGoToDialogue = () => {
+  navigateTo(Pages.Messages, { params: { id: userRecipient.value } });
+};
+
+
 onMounted(() => {
   fetchUser();
-  fetchPosts(userId.value);
+  fetchPosts(userRecipient.value);
   pageRoom();
   socket.on('postUpdate', async (post: IPost) => {
    
@@ -205,8 +221,8 @@ onMounted(() => {
 });
 
 const pageRoom = (): void => {
-  if (userId.value) {
-    socket.emit('pageRoom', userId.value);
+  if (userRecipient.value) {
+    socket.emit('pageRoom', userRecipient.value);
   }
 };
 
@@ -216,6 +232,12 @@ const pageRoom = (): void => {
   <v-container class="fill-height d-flex">
     <v-navigation-drawer app permanent class="custom-nav" width="200">
       <v-list dense>
+        <v-list-item link @click="navigateTo(Pages.Home)">
+          <v-list-item-content class="d-flex align-center">
+            <v-icon>mdi-home</v-icon>
+            <v-list-item-title class="ml-2">Лента</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item link @click="navigateTo(Pages.Chats)">
           <v-list-item-content class="d-flex align-center">
             <v-icon>mdi-chat</v-icon>
@@ -228,6 +250,13 @@ const pageRoom = (): void => {
             <v-list-item-title class="ml-2">Пользователи</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item link @click="vOnHandleLogout">
+          <v-list-item-content class="d-flex align-center">
+            <v-icon>mdi-logout</v-icon>
+            <v-list-item-title class="ml-2">Выйти</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        
       </v-list>
     </v-navigation-drawer>
 
@@ -263,13 +292,26 @@ const pageRoom = (): void => {
             </div>
           </v-hover>
         </v-card-text>
-        <v-card-text>
+        <v-card-text v-model="subscriptions" >
           <p><strong>Name:</strong> {{ firstname }}</p>
           <p><strong>Surname:</strong> {{ surname }}</p>
           <p><strong>Email:</strong> {{ email }}</p>
-          <v-btn class="mt-4" block color="primary" @click="vOnHandleLogout">
-            Logout
+          <v-btn v-if="!itIsMe" color="blue" @click="vOnSubscribe">
+  <v-icon v-if="subscriptions.includes(userId!)">mdi-account-check</v-icon>
+  <v-icon v-else>mdi-account-plus</v-icon>
+  {{ subscriptions.includes(userId!) ? "Отписаться" : "Подписаться" }}
+</v-btn>
+<v-btn
+            v-if="!itIsMe"
+            class="edit-btn"
+            color="primary"
+            icon
+            @click ="vOnGoToDialogue"
+            style="position: absolute; top: 16px; right: 16px"
+          >
+            <v-icon>mdi-message</v-icon>
           </v-btn>
+        
         </v-card-text>
       </v-card>
 
@@ -323,7 +365,7 @@ const pageRoom = (): void => {
               height="200"
             ></v-img>
             <v-btn color="blue" @click="vOnlikePost(post)">
-          <v-icon v-if="post.likes.includes(userId!)">mdi-thumb-up</v-icon>
+          <v-icon v-if="post.likes.includes(userRecipient!)">mdi-thumb-up</v-icon>
           <v-icon v-else>mdi-thumb-up-outline</v-icon>
            ({{ post.likes.length }})
         </v-btn>

@@ -4,7 +4,7 @@ import { Pages } from "../utils/pages.ts";
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { LOCALHOST, USER_KEY } from "../utils/constants";
-import type { IChat } from "@/models/chat.ts";
+import type { IChat } from "../models/chat.ts";
 
 const chats = ref<IChat[]>([]);
 const loading = ref<boolean>(true);

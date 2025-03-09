@@ -4,6 +4,7 @@ export interface IPost {
       _id: string;
       firstname: string;
       surname: string;
+      avatar_url: string;
     };
     content: string;
     image_url?: string;

@@ -214,6 +214,7 @@ app.post("/api/user-info", async (req, res) => {
       surname: user.surname,
       email: user.email,
       avatarUrl: user.avatar_url,
+      subscriptions: user.subscriptions,
     });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
@@ -442,11 +443,14 @@ app.delete("/api/posts/:postId", async (req, res) => {
 
 app.put("/api/posts/like", async (req, res) => {
   try {
-    const { user_id, postId } = req.body;
+    console.log(req.body)
+
+    const { user_id,postId } = req.body;
+    console.log(user_id,postId)
 
     
 
-    const post = await Post.findById(postId).populate("user_id", "firstname surname");
+    const post = await Post.findById(postId).populate("user_id", "firstname surname avatar_url");
     if (!post) return res.status(404).json({ message: "Пост не найден" });
 
     const likeIndex = post.likes.indexOf(user_id);
@@ -458,15 +462,68 @@ app.put("/api/posts/like", async (req, res) => {
     }
 
     await post.save();
-    io.to(user_id).emit("postUpdate", post);
-    res.json({ likes: post.likes });
+    res.json( post );
   } catch (error) {
     console.error("Ошибка при лайке поста:", error);
     res.status(500).json({ message: "Ошибка сервера" });
   }
-
- 
 });
+
+
+app.put("/api/subscribe", async (req, res) => {
+  try {
+    const { pageId, userId } = req.body;
+    console.log("jgghg"+pageId,"hjhhj"+userId);
+
+    const page = await User.findById(pageId);
+    if (!page) {
+      return res.status(404).json({ message: "Страница не найдена" });
+    }
+
+    const subscriptionIndex = page.subscriptions.indexOf(userId);
+
+    if (subscriptionIndex === -1) {
+      page.subscriptions.push(userId); 
+    } else {
+      page.subscriptions.splice(subscriptionIndex, 1);
+    }
+
+    await page.save();
+
+    res.json({ subscriptions: page.subscriptions });
+  } catch (error) {
+    console.error("Ошибка при подписке:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+
+app.get("/api/feed/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+  
+    const subscribers = await User.find({ subscriptions: userId }, "_id");
+
+    if (!subscribers.length) {
+      return res.json({ message: "Нет постов в ленте", posts: [] });
+    }
+
+    const subscriberIds = subscribers.map(user => user._id); 
+
+    
+    const posts = await Post.find({ user_id: { $in: subscriberIds } })
+      .populate("user_id", "username firstname surname avatar_url") 
+      .sort({ created_at: -1 }); 
+      console.log(posts)
+   
+    res.json(posts);
+  } catch (error) {
+    console.error("Ошибка при загрузке ленты:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
 
 const start = () => {
   try {
