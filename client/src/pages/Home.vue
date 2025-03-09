@@ -90,10 +90,16 @@ onUnmounted(() => {
               <v-list-item-title class="ml-2">Лента</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item link @click="navigateTo(Pages.UserPage, { params: { id: userId } })">
+          <v-list-item-content class="d-flex align-center">
+            <v-icon>mdi-account</v-icon>
+            <v-list-item-title class="ml-2">Моя страница</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
           <v-list-item link @click="navigateTo(Pages.Chats)">
             <v-list-item-content class="d-flex align-center">
               <v-icon>mdi-chat</v-icon>
-              <v-list-item-title class="ml-2">Чаты</v-list-item-title>
+              <v-list-item-title class="ml-2">Сообщения</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
           <v-list-item link @click="navigateTo(Pages.AllUsersPage)">

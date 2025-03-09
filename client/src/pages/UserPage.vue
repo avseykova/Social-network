@@ -170,10 +170,11 @@ const uploadAvatar = async () => {
 
 const vOnlikePost = async (post: IPost) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/posts/like`, {
+     await axios.put(`${API_BASE_URL}/posts/like`, {
       user_id: post.user_id._id,
       postId: post._id,
     });
+
   } catch (error) {
     console.error('Ошибка при лайке поста:', error);
   }
@@ -218,6 +219,8 @@ onMounted(() => {
       posts.value[index] = post; 
     }
   });
+
+  
 });
 
 const pageRoom = (): void => {
@@ -238,10 +241,16 @@ const pageRoom = (): void => {
             <v-list-item-title class="ml-2">Лента</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item link @click="navigateTo(Pages.UserPage, { params: { id: userId } })">
+          <v-list-item-content class="d-flex align-center">
+            <v-icon>mdi-account</v-icon>
+            <v-list-item-title class="ml-2">Моя страница</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item link @click="navigateTo(Pages.Chats)">
           <v-list-item-content class="d-flex align-center">
             <v-icon>mdi-chat</v-icon>
-            <v-list-item-title class="ml-2">Чаты</v-list-item-title>
+            <v-list-item-title class="ml-2">Сообщения</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item link @click="navigateTo(Pages.AllUsersPage)">

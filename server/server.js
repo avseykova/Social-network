@@ -446,9 +446,6 @@ app.put("/api/posts/like", async (req, res) => {
     console.log(req.body)
 
     const { user_id,postId } = req.body;
-    console.log(user_id,postId)
-
-    
 
     const post = await Post.findById(postId).populate("user_id", "firstname surname avatar_url");
     if (!post) return res.status(404).json({ message: "Пост не найден" });
@@ -462,6 +459,7 @@ app.put("/api/posts/like", async (req, res) => {
     }
 
     await post.save();
+    io.to(user_id).emit("postUpdate", post);
     res.json( post );
   } catch (error) {
     console.error("Ошибка при лайке поста:", error);
@@ -526,7 +524,7 @@ app.post("/api/feed", async (req, res) => {
       posts,
       totalPages: Math.ceil(totalPosts / limit),
       currentPage: page,
-      hasMore: page * limit < totalPosts, // Есть ли еще посты?
+      hasMore: page * limit < totalPosts,
     });
   } catch (error) {
     console.error("Ошибка при загрузке ленты:", error);
