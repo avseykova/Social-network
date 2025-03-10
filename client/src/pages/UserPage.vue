@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { strings } from "../resources/strings.ts";
+import { onBeforeRouteUpdate } from "vue-router";
 import {
   DEFAULT_AVATAR,
   USER_KEY,
   LOCALHOST,
-  FIRSTNAME_KEY,
   API_BASE_URL,
 } from "../utils/constants.ts";
 import { navigateTo as navigateTo } from "../router/routerService.ts";
@@ -33,6 +33,10 @@ const userRecipient = ref<string | null>(route.params.id.toString());
 const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const socket: Socket = io(LOCALHOST);
 const itIsMe = ref<boolean>(userRecipient.value == localStorage.getItem(USER_KEY));
+const followersCount = ref<number>(0);
+const subscriptionsCount = ref<number>(0);
+const subscriptionsList = ref<any[]>([]); 
+const followers = ref<any[]>([]); 
 
 
 const vOnhandleOk = async () => {
@@ -112,10 +116,12 @@ const fetchUser = async (): Promise<void> => {
       firstname.value = response.data.firstname;
       surname.value = response.data.surname;
       email.value = response.data.email;
-      avatarUrl.value = response.data.avatarUrl || DEFAULT_AVATAR;
-      localStorage.setItem(FIRSTNAME_KEY, firstname.value);
+      avatarUrl.value = response.data.avatarUrl || '';
       subscriptions.value = response.data.subscriptions;
-
+      subscriptionsList.value = response.data.subscriptions || [];
+      followers.value = response.data.followers;
+      followersCount.value = response.data.followers?.length || 0;
+      subscriptionsCount.value = response.data.subscriptions?.length || 0;
     }
 
     console.log(strings.userPageLoaded)
@@ -192,36 +198,54 @@ const fetchPosts = async (userId: string | null) => {
 };
 
 const vOnSubscribe = async () => {
-
-    try {
+  try {
+    console.log(userId.value,userRecipient.value)
     const response = await axios.put(`${API_BASE_URL}/subscribe`, {
-      userId: localStorage.getItem(USER_KEY),
+      userId: userId.value,
       pageId: userRecipient.value,
     });
-    subscriptions.value = response.data.subscriptions;
+    
+
+    followers.value = response.data.followers || [];
+    subscriptions.value = response.data.subscriptions || [];
+    
+
+    subscriptionsCount.value = subscriptions.value.length;
+    followersCount.value = followers.value.length;
+   
+
   } catch (error) {
-    console.error('Ошибка при лайке поста:', error);
+    console.error("Ошибка подписки:", error);
   }
 };
 const vOnGoToDialogue = () => {
   navigateTo(Pages.Messages, { params: { id: userRecipient.value } });
 };
 
+onBeforeRouteUpdate((to, from) => {
+  if (to.params.id !== from.params.id) {
+    reloadPage(to.params.id.toString());
+  }
+});
 
 onMounted(() => {
+  let route = useRoute();
+  reloadPage(route.params.id.toString());
+});
+
+const reloadPage = (userId: string | null) => {
+  userRecipient.value = userId;
+  itIsMe.value = userRecipient.value == localStorage.getItem(USER_KEY)
   fetchUser();
   fetchPosts(userRecipient.value);
   pageRoom();
   socket.on('postUpdate', async (post: IPost) => {
-   
-        const index = posts.value.findIndex(p => p._id === post._id);
+    const index = posts.value.findIndex(p => p._id === post._id);
     if (index !== -1) {
       posts.value[index] = post; 
     }
   });
-
-  
-});
+}
 
 const pageRoom = (): void => {
   if (userRecipient.value) {
@@ -276,6 +300,7 @@ const pageRoom = (): void => {
         <v-card-title class="text-center text-h5"
           >{{ firstname }} {{ surname }}</v-card-title
         >
+        
         <v-card-text class="d-flex flex-column align-center">
           <v-hover v-slot:default="{ isHovering, props }">
             <div  class="image-container" v-bind="props">
@@ -305,11 +330,31 @@ const pageRoom = (): void => {
           <p><strong>Name:</strong> {{ firstname }}</p>
           <p><strong>Surname:</strong> {{ surname }}</p>
           <p><strong>Email:</strong> {{ email }}</p>
-          <v-btn v-if="!itIsMe" color="blue" @click="vOnSubscribe">
-  <v-icon v-if="subscriptions.includes(userId!)">mdi-account-check</v-icon>
-  <v-icon v-else>mdi-account-plus</v-icon>
-  {{ subscriptions.includes(userId!) ? "Отписаться" : "Подписаться" }}
-</v-btn>
+         
+          <v-row class="mt-2 align-center">
+  <v-col cols="auto">
+    <v-btn color="blue" @click="navigateTo(Pages.SubscriptionsPage, { params:{ id: userRecipient } })">
+      <v-icon left>mdi-account-multiple</v-icon>
+      Подписки: {{  subscriptionsCount }}
+    </v-btn>
+  </v-col>
+
+  <v-col cols="auto">
+    <v-btn color="green" @click="navigateTo(Pages.FollowersPage, { params:{ id: userRecipient } })">
+      <v-icon left>mdi-account-heart</v-icon>
+      Подписчики: {{ followersCount }}
+    </v-btn>
+  </v-col>
+
+  <v-col cols="auto">
+    <v-btn v-if="!itIsMe" color="blue" @click="vOnSubscribe">
+      <v-icon v-if="followers.includes(userId!)">mdi-account-check</v-icon>
+      <v-icon v-else>mdi-account-plus</v-icon>
+      {{ followers.includes(userId!) ? "Отписаться" : "Подписаться" }}
+    </v-btn>
+  </v-col>
+</v-row>
+
 <v-btn
             v-if="!itIsMe"
             class="edit-btn"

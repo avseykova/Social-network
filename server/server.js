@@ -208,16 +208,72 @@ app.post("/api/user-info", async (req, res) => {
     const { user_id } = req.body;
     const user = await User.findById(user_id);
     if (!user) return res.status(400).json({ error: "User not found" });
+    const subscriptions = await User.find({ followers: user_id }, "firstname surname avatar_url");
 
     res.status(200).json({
       firstname: user.firstname,
       surname: user.surname,
       email: user.email,
       avatarUrl: user.avatar_url,
-      subscriptions: user.subscriptions,
+      subscriptions: subscriptions,
+      followers: user.followers,
+      followersCount: user.followers.length,
+      subscriptionsCount: subscriptions.length,
     });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+app.get("/api/followers/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    
+    const page = await User.findById(userId);
+    if (!page) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+  
+    if (!page.followers || page.followers.length === 0) {
+      return res.json({ followers: [] }); 
+    }
+
+   
+    const followers = await User.find({ _id: { $in: page.followers } }, "firstname surname email avatar_url followers");
+
+    res.json({ followers });
+  } catch (error) {
+    console.error("Ошибка при получении подписчиков:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+app.get("/api/subscriptions/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+   
+    const user = await User.findById(userId);
+if (!user) {
+  return res.status(404).json({ message: "Пользователь не найден" });
+}
+
+
+
+const subscriptions = await User.find({ followers: userId }, "firstname surname email avatar_url followers");
+
+if (!subscriptions || subscriptions.length === 0) {
+  return res.json({ subscriptions: [] }); 
+}
+
+res.json({ subscriptions });
+    
+
+  } catch (error) {
+    console.error("Ошибка при подписке:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
   }
 });
 
@@ -470,25 +526,28 @@ app.put("/api/posts/like", async (req, res) => {
 
 app.put("/api/subscribe", async (req, res) => {
   try {
-    const { pageId, userId } = req.body;
-    console.log("jgghg"+pageId,"hjhhj"+userId);
+    const {userId, pageId } = req.body;
+    console.log(userId, pageId)
 
-    const page = await User.findById(pageId);
-    if (!page) {
+    const user = await User.findById(pageId);
+    if (!user) {
       return res.status(404).json({ message: "Страница не найдена" });
     }
 
-    const subscriptionIndex = page.subscriptions.indexOf(userId);
+    const followerIndex = user.followers.indexOf(userId);
 
-    if (subscriptionIndex === -1) {
-      page.subscriptions.push(userId); 
+    if (followerIndex === -1) {
+      user.followers.push(userId); 
     } else {
-      page.subscriptions.splice(subscriptionIndex, 1);
+      user.followers.splice(followerIndex, 1);
     }
 
-    await page.save();
+    await user.save();
 
-    res.json({ subscriptions: page.subscriptions });
+   
+    const subscriptions = await User.find({ followers: pageId }, "firstname surname avatarUrl");
+
+    res.json({ followers: user.followers, subscriptions: subscriptions });
   } catch (error) {
     console.error("Ошибка при подписке:", error);
     res.status(500).json({ message: "Ошибка сервера" });
