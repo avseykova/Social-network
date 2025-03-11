@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SubscribeButton from "../components/SubscribeButton.vue";
+import EditProfileDialog from "../components/EditProfileDialog.vue";
 import PostCard from "../components/PostCard.vue";
 import NavigationDrawer from "../components/NavigationDrawer.vue";
 import { ref, onMounted } from "vue";
@@ -21,12 +22,8 @@ import { useRoute } from 'vue-router';
 const email = ref<string>('');
 const dialog = ref<boolean>(false);
 const avatarUrl = ref<string>(DEFAULT_AVATAR);
-const newAvatarUrl = ref<string>('');
-const selectedFile = ref<File | null>(null);
 const firstname = ref<string>('');
-const newFirstname = ref<string>('');
 const surname = ref<string>('');
-const newSurname = ref<string>('');
 const posts = ref<IPost[]>([]);
 const subscriptions = ref<string[]>([]);
 const newPostContent = ref('');
@@ -41,14 +38,12 @@ const subscriptionsCount = ref<number>(0);
 const subscriptionsList = ref<any[]>([]); 
 const followers = ref<any[]>([]); 
 
-
-const vOnhandleOk = async () => {
-  await uploadAvatar();
-  await updateUserBD();
+const vOnhandleOk = async (result: any) => {
+  const newAvatarUrl = await uploadAvatar(result.avatar);
+  await updateUserBD(result.firstname, result.surname, newAvatarUrl );
   await fetchUser();
   dialog.value = false;
 };
-
 
 const vOnaddPost = async () => {
   if (!newPostContent.value && !newPostImage.value) return;
@@ -128,14 +123,14 @@ const fetchUser = async (): Promise<void> => {
   }
 };
 
-const updateUserBD = async () => {
+const updateUserBD = async (newFirstname:string | null, newSurname:string | null, newAvatarUrl:string | null) => {
   try {
 
     const response = await axios.put(`${LOCALHOST}/updateuser`, {
       user_id: localStorage.getItem(USER_KEY),
-      firstname: newFirstname.value || firstname.value,
-      surname: newSurname.value || surname.value,
-      avatarUrl: newAvatarUrl.value || avatarUrl.value,
+      firstname: newFirstname || firstname.value,
+      surname: newSurname || surname.value,
+      avatarUrl: newAvatarUrl || avatarUrl.value,
     });
 
     console.log('Аватар успешно обновлён:', response.data.message);
@@ -143,33 +138,21 @@ const updateUserBD = async () => {
     console.error('Ошибка:', error.response?.data?.error || error.message);
   }
 };
-
-const vOnFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    selectedFile.value = target.files[0];
-  }
-};
-
-const uploadAvatar = async () => {
-  if (!selectedFile.value) return;
-
+const uploadAvatar = async (selectedFile: File | null): Promise<string | null> => {
+  if (!selectedFile) return null;
 
   const formData = new FormData();
-  formData.append('image', selectedFile.value);
+  formData.append("image", selectedFile);
 
   try {
-    const response = await axios.post(
-      `${LOCALHOST}/upload`,
-      formData
-    );
-
-    newAvatarUrl.value = `${LOCALHOST}${response.data.url}`;
+    const response = await axios.post(`${LOCALHOST}/upload`, formData);
+    return `${LOCALHOST}${response.data.url}`;
   } catch (error) {
-    console.error('Ошибка загрузки:', error);
-  } finally {
+    console.error("Ошибка загрузки:", error);
+    return null;
   }
 };
+
 
 
 const vOnlikePost = async (post: IPost) => {
@@ -332,25 +315,12 @@ const pageRoom = (): void => {
         </v-card-text>
       </v-card>
 
-      <v-dialog v-if= "itIsMe" v-model="dialog" max-width="400">
-        <v-card >
-          <v-card-title>Редактировать профиль</v-card-title>
-          <v-card-text>
-            <v-text-field v-model="newFirstname" label="Имя"></v-text-field>
-            <v-text-field v-model="newSurname" label="Фамилия"></v-text-field>
-            <v-file-input
-              accept="image/*"
-              label="Выберите изображение"
-              @change="vOnFileChange"
-            ></v-file-input>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="red" @click="dialog = false">Отмена</v-btn>
-            <v-btn color="primary" @click="vOnhandleOk">OK</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        
+       <EditProfileDialog v-if= "itIsMe"
+  v-model:dialog="dialog"
+  :user="{ firstname: firstname, surname: surname, avatarUrl: avatarUrl }"
+  @save="vOnhandleOk"
+/>
 
       <v-card v-if= "itIsMe" class="pa-4 mt-4 w-75">
         <v-card-title>Создать пост</v-card-title>
