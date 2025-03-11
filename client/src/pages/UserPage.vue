@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import LikeButton from "../components/LikeButton.vue";
+import SubscribeButton from "../components/SubscribeButton.vue";
+import PostCard from "../components/PostCard.vue";
 import NavigationDrawer from "../components/NavigationDrawer.vue";
 import { ref, onMounted } from "vue";
 import { strings } from "../resources/strings.ts";
@@ -310,11 +311,10 @@ const pageRoom = (): void => {
   </v-col>
 
   <v-col cols="auto">
-    <v-btn v-if="!itIsMe" color="blue" @click="vOnSubscribe">
-      <v-icon v-if="followers.includes(userId!)">mdi-account-check</v-icon>
-      <v-icon v-else>mdi-account-plus</v-icon>
-      {{ followers.includes(userId!) ? "Отписаться" : "Подписаться" }}
-    </v-btn>
+    <SubscribeButton v-if="!itIsMe" 
+  :isSubscribed="followers.includes(userId!)" 
+  @toggleSubscribe="vOnSubscribe" 
+/>
   </v-col>
 </v-row>
 
@@ -369,26 +369,16 @@ const pageRoom = (): void => {
       </v-card>
 
       <v-list class="mt-4 w-75">
-        <v-list-item v-for="(post, index) in posts" :key="index">
-          <v-card class="my-4 pa-3">
-            <v-card-title
-              >{{ post.user_id.firstname }}
-              {{ post.user_id.surname }}</v-card-title
-            >
-            <v-card-text>{{ post.content }}</v-card-text>
-            <v-img
-              v-if="post.image_url"
-              :src="`${LOCALHOST}${post.image_url}`"
-              height="200"
-            ></v-img>
-            <LikeButton 
-  :isLiked="post.likes.includes(userId!)" 
-  :likesCount="post.likes.length" 
-  @toggleLike="vOnlikePost(post)" 
+       
+          <PostCard 
+  v-for="(post, index) in posts" 
+  :key="index" 
+  :post="post" 
+  :isOwner="itIsMe" 
+  @likePost="vOnlikePost" 
+  @deletePost="vOndeletePost"
 />
-            <v-btn v-if= "itIsMe" class="ml-3" color="red" @click="vOndeletePost(post._id)">Удалить</v-btn>
-          </v-card>
-        </v-list-item>
+       
       </v-list>
     </v-container>
   </v-container>

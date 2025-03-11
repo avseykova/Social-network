@@ -477,7 +477,7 @@ app.get("/api/posts/:userId", async (req, res) => {
     console.log(req.params.userId);
 
     const posts = await Post.find({ user_id: req.params.userId })
-      .populate("user_id", "firstname surname")
+      .populate("user_id", "firstname surname avatar_url")
       .sort({ created_at: -1 });
 
     res.json(posts);

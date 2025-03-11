@@ -8,7 +8,7 @@ import { navigateTo as navigateTo } from "../router/routerService.ts";
 import {LOCALHOST} from "../utils/constants.ts";
 import type { IPost } from '../models/userPost.ts';
 import NavigationDrawer from "../components/NavigationDrawer.vue";
-import LikeButton from "../components/LikeButton.vue";
+import PostCard from "../components/PostCard.vue";
 
 const userId = ref <string | null>(localStorage.getItem(USER_KEY));
 const currentPage = ref(1);
@@ -92,29 +92,13 @@ onUnmounted(() => {
       >
   
         <v-list class="mt-4 w-75">
-          <v-list-item v-for="(post, index) in posts" :key="index">
-            <v-card class="my-4 pa-3">
-              <v-card-title class="d-flex align-center">
-              <v-avatar v-if="post.user_id.avatar_url" size="40" class="mr-3">
-            <v-img :src="`${post.user_id.avatar_url}`"  alt="Аватар"></v-img>
-          </v-avatar>
-
-                {{ post.user_id.firstname }}
-                {{ post.user_id.surname }}</v-card-title
-              >
-              <v-card-text>{{ post.content }}</v-card-text>
-              <v-img
-                v-if="post.image_url"
-                :src="`${LOCALHOST}${post.image_url}`"
-                height="200"
-              ></v-img>
-              <LikeButton 
-  :isLiked="post.likes.includes(userId!)" 
-  :likesCount="post.likes.length" 
-  @toggleLike="vOnlikePost(post)" 
+          <PostCard 
+  v-for="(post, index) in posts" 
+  :key="index" 
+  :post="post"  
+  @likePost="vOnlikePost" 
+ 
 />
-            </v-card>
-          </v-list-item>
         </v-list>
         
       <v-progress-circular v-if="isLoading" indeterminate color="blue"></v-progress-circular>
