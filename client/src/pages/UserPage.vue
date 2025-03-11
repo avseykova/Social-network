@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import LikeButton from "../components/LikeButton.vue";
+import NavigationDrawer from "../components/NavigationDrawer.vue";
 import { ref, onMounted } from "vue";
 import { strings } from "../resources/strings.ts";
 import { onBeforeRouteUpdate } from "vue-router";
@@ -93,11 +95,6 @@ const vOnhandleFileChange = (event: Event) => {
   if (target.files && target.files.length) {
     newPostImage.value = target.files[0];
   }
-};
-
-const vOnHandleLogout = () => {
-  localStorage.removeItem(USER_KEY);
-  navigateTo(Pages.Login);
 };
 
 const fetchUser = async (): Promise<void> => {
@@ -257,41 +254,7 @@ const pageRoom = (): void => {
 
 <template>
   <v-container class="fill-height d-flex">
-    <v-navigation-drawer app permanent class="custom-nav" width="200">
-      <v-list dense>
-        <v-list-item link @click="navigateTo(Pages.Home)">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-home</v-icon>
-            <v-list-item-title class="ml-2">Лента</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="navigateTo(Pages.UserPage, { params: { id: userId } })">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-account</v-icon>
-            <v-list-item-title class="ml-2">Моя страница</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="navigateTo(Pages.Chats)">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-chat</v-icon>
-            <v-list-item-title class="ml-2">Сообщения</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="navigateTo(Pages.AllUsersPage)">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-account-group</v-icon>
-            <v-list-item-title class="ml-2">Пользователи</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="vOnHandleLogout">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-logout</v-icon>
-            <v-list-item-title class="ml-2">Выйти</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        
-      </v-list>
-    </v-navigation-drawer>
+    <NavigationDrawer :userId="userId" />
 
     <v-container
       class="flex-grow-1 d-flex flex-column align-center justify-center ml-6"
@@ -418,11 +381,11 @@ const pageRoom = (): void => {
               :src="`${LOCALHOST}${post.image_url}`"
               height="200"
             ></v-img>
-            <v-btn color="blue" @click="vOnlikePost(post)">
-          <v-icon v-if="post.likes.includes(userRecipient!)">mdi-thumb-up</v-icon>
-          <v-icon v-else>mdi-thumb-up-outline</v-icon>
-           ({{ post.likes.length }})
-        </v-btn>
+            <LikeButton 
+  :isLiked="post.likes.includes(userId!)" 
+  :likesCount="post.likes.length" 
+  @toggleLike="vOnlikePost(post)" 
+/>
             <v-btn v-if= "itIsMe" class="ml-3" color="red" @click="vOndeletePost(post._id)">Удалить</v-btn>
           </v-card>
         </v-list-item>

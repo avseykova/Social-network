@@ -1,5 +1,6 @@
 import { type Router } from "vue-router";
 import { type IPage } from "../models/page";
+import type { INavigateOptions } from "../models/navigateOptions";
 
 let router: Router | null = null;
 
@@ -7,12 +8,7 @@ export const setRouter = (instance: Router): void => {
   router = instance;
 };
 
-interface NavigateOptions {
-  params?: Record<string, any>;
-  query?: Record<string, any>;
-}
-
-export const navigateTo = (page: IPage, options?: NavigateOptions): void => {
+export const navigateTo = (page: IPage, options?: INavigateOptions): void => {
   if (router) {
     console.log('dsfds', options?.params);
     router.push({

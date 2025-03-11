@@ -22,13 +22,12 @@ const vOnRegister = async (): Promise<void> => {
   isError.value = false;
 
   try {
-    const userData: IUserRegister = {
+    
+    const response = await axios.post<IApiResponse>(`${API_BASE_URL}/register`,{
       username: username.value.trim(),
       email: email.value,
       password: password.value,
-    };
-
-    const response = await axios.post<IApiResponse>(`${API_BASE_URL}/register`, userData);
+    } );
 
     message.value = response.data.message || strings.loginSuccess;
     setTimeout(() => navigateTo(Pages.Login), 500);
