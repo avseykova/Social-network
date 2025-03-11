@@ -48,22 +48,20 @@ io.on("connection", (socket) => {
   });
 
   socket.on("chatMessage", async (message) => {
-    await saveMessage(message);
+    const savedMessage = await saveMessage(message);
 
     try {
-      const user = await User.findById(message.user_id);
+      const user = await User.findById(savedMessage.user_id);
       if (user) {
-        message.username = user.username;
-      } else {
-        message.username = "Неизвестный пользователь";
-      }
+        savedMessage.username = user.username;
+      } 
     } catch (error) {
       console.error("Ошибка при получении пользователя:", error);
-      message.username = "Ошибка";
+      savedMessage.username = "Ошибка";
     }
 
-    io.to(message.chat_id).emit("chatMessage", message);
-    console.log(`Message in room ${message.chat_id} from ${message.username}`);
+    io.to(savedMessage.chat_id).emit("chatMessage", savedMessage);
+    console.log(`Message in room ${savedMessage.chat_id} from ${savedMessage.username}`);
   });
 
   socket.on("messageUpdated", async (message) => {
@@ -383,20 +381,19 @@ app.get("/api/messages", async (req, res) => {
     return res.status(500).json({ error: "Внутренняя ошибка сервера." });
   }
 });
-
 const saveMessage = async (message) => {
   const { user_id, chat_id, content } = message;
 
   if (!user_id || !chat_id || !content) {
     console.log("Параметры user_id, chat_id и content обязательны.");
-    return;
+    return null;
   }
 
   try {
     const chat = await Chat.findById(chat_id);
     if (!chat) {
       console.log("Чат не найден.");
-      return;
+      return null;
     }
 
     const newMessage = new Message({
@@ -405,9 +402,11 @@ const saveMessage = async (message) => {
       content,
     });
 
-    await newMessage.save();
+    const savedMessage = await newMessage.save();
+    return savedMessage;
   } catch (error) {
-    console.error(error);
+    console.error("Ошибка при сохранении сообщения:", error);
+    return null;
   }
 };
 

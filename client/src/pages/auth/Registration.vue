@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import type { IUserRegister } from "../../models/userRegister.ts";
 import type { IApiResponse } from "../../models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";

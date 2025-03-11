@@ -35,7 +35,7 @@ onMounted(() => {
 <template>
   <v-container>
     <v-row>
-      <v-col v-for="user in users" :key="user.username" cols="12" sm="6" md="4">
+      <v-col v-for="user in users" :key="user.username" sm="6" md="4">
         <v-card class="pa-2" style="position: relative"  @click="() => navigateTo(Pages.UserPage, { params: { id: user._id } })">
           <v-img :src="user.avatar_url" height="100px" />
           <v-card-title>{{ user.firstname }} {{ user.surname }}</v-card-title>

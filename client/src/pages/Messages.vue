@@ -6,6 +6,7 @@ import { useRoute } from 'vue-router';
 import axios from 'axios';
 import type { IChatMessageToView } from '../models/chatMessageToView';
 import type { IChatMessage } from '../models/chatMessage';
+import ChatMessage from "../components/ChatMessage.vue";
 
 const socket: Socket = io(LOCALHOST);
 const messagesToView = ref<IChatMessageToView[]>([]);
@@ -124,34 +125,13 @@ onMounted(async () => {
       
       <div ref="messagesContainer" style="height: 300px; overflow-y: auto">
         <v-list>
-          <v-list-item v-for="(msg, index) in messagesToView" :key="index">
-            <v-list-item-content>
-              <v-list-item-title>
-                <strong>{{ msg.username }}:</strong> {{ msg.content }}
-              </v-list-item-title>
-            </v-list-item-content>
-            <v-list-item-action class="d-flex">
-              <v-btn 
-                icon 
-                small 
-                size="x-small" 
-                @click="vOnSetEditingMessage(msg)" 
-                style="min-width: 24px; padding: 2px"
-              >
-                <v-icon size="12">mdi-pencil</v-icon>
-              </v-btn>
-              <v-btn 
-                icon 
-                small 
-                size="x-small" 
-                color="red" 
-                @click="vOnDeleteMessage(msg._id)" 
-                style="min-width: 24px; padding: 2px"
-              >
-                <v-icon size="12">mdi-delete</v-icon>
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
+          <ChatMessage 
+  v-for="(msg, index) in messagesToView" 
+  :key="index" 
+  :message="msg" 
+  @editMessage="vOnSetEditingMessage" 
+  @deleteMessage="vOnDeleteMessage"
+/>
         </v-list>
       </div>
 
