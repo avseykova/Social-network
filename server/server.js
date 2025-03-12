@@ -60,7 +60,14 @@ io.on("connection", (socket) => {
       savedMessage.username = "Ошибка";
     }
 
-    io.to(savedMessage.chat_id).emit("chatMessage", savedMessage);
+    io.to(savedMessage.chat_id.toString()).emit("chatMessage", 
+      {
+        _id: savedMessage._id,
+      chat_id: savedMessage.chat_id,
+      user_id: savedMessage.user_id,
+      content: savedMessage.content,
+      username: savedMessage.username
+    });
     console.log(`Message in room ${savedMessage.chat_id} from ${savedMessage.username}`);
   });
 

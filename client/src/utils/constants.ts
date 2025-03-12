@@ -6,4 +6,5 @@ export const DEFAULT_AVATAR = 'http://localhost:5004/uploads/default_avatar.png'
 export const LOCALHOST = 'http://localhost:5004';
 export const RECEIVER_NAME = 'receiverName';
 export const API_BASE_URL = 'http://localhost:5004/api';
+export const LIMIT = 5; 
 

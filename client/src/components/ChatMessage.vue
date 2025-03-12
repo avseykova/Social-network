@@ -5,7 +5,7 @@ const props = defineProps<{
   message: { _id: string; username: string; content: string };
 }>();
 
-const emit = defineEmits(["editMessage", "deleteMessage"]);
+const emit = defineEmits(['editMessage', 'deleteMessage']);
 </script>
 
 <template>

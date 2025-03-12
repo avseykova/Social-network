@@ -6,7 +6,7 @@ const props = defineProps<{
   likesCount: number;
 }>();
 
-const emit = defineEmits(["toggleLike"]);
+const emit = defineEmits(['toggleLike']);
 </script>
 
 <template>

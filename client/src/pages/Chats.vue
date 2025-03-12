@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
-import { ref, onMounted } from "vue";
+import { onMounted, shallowRef } from "vue";
 import axios from "axios";
 import { LOCALHOST, USER_KEY } from "../utils/constants";
 import type { IChat } from "../models/chat.ts";
 
-const chats = ref<IChat[]>([]);
-const loading = ref<boolean>(true);
+const chats = shallowRef<IChat[]>([]);
+const loading = shallowRef<boolean>(true);
 
 const vOnGoToDialogue = (chat: IChat) => {
   navigateTo(Pages.Messages, { params: { id: chat.receiver_id } });
@@ -19,7 +19,6 @@ const getChats = async () => {
       user_id: localStorage.getItem(USER_KEY),
     });
     chats.value = response.data.chats;
-    console.log(chats);
   } catch (error: any) {
     console.error('Ошибка:', error.response?.data?.error || error.message);
   } finally {
@@ -49,7 +48,6 @@ onMounted(() => {
                 :src="chat.avatar_url"
                 height="50px"
                 width="50px"
-                
               />
             </v-col>
             <v-col class="pa-0">

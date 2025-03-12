@@ -6,11 +6,11 @@ const props = defineProps<{
   user: { firstname: string; surname: string; avatarUrl: string };
 }>();
 
-const emit = defineEmits(["update:dialog", "close", "save"]);
+const emit = defineEmits(['update:dialog', 'close', 'save']);
 
 const dialogModel = computed({
   get: () => props.dialog,
-  set: (value) => emit("update:dialog", value),
+  set: (value) => emit('update:dialog', value),
 });
 
 const newFirstname = ref(props.user.firstname);
@@ -32,12 +32,12 @@ const handleFileChange = (event: Event) => {
 };
 
 const saveChanges = () => {
-  emit("save", {
+  emit('save', {
     firstname: newFirstname.value,
     surname: newSurname.value,
     avatar: newAvatar.value, 
   });
-  emit("update:dialog", false); 
+  emit('update:dialog', false); 
 };
 </script>
 

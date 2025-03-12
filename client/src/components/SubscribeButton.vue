@@ -5,7 +5,7 @@ const props = defineProps<{
   isSubscribed: boolean;
 }>();
 
-const emit = defineEmits(["toggleSubscribe"]);
+const emit = defineEmits(['toggleSubscribe']);
 </script>
 
 <template>
