@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, shallowRef } from "vue";
+import { ref, onMounted } from "vue";
 import { Pages } from "../utils/pages.ts";
 import { API_BASE_URL, DEFAULT_AVATAR, USER_KEY } from "../utils/constants.ts";
 import { navigateTo as navigateTo } from "../router/routerService.ts";
 import axios from "axios";
 import { useRoute } from "vue-router";
 import type { IFollower, IFollowersResponse } from "../models/follower.ts";
+import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 const route = useRoute();
-const userRecipient = shallowRef<string | null>(route.params.id.toString());
+const userRecipient = ref<string | null>(route.params.id.toString());
 const followersCount = ref<number>(0);
-const followers = shallowRef<IFollower[]>([]);
-const userId = shallowRef<string | null>(localStorage.getItem(USER_KEY));
+const followers = ref<IFollower[]>([]);
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
 const fetchFollowers = async (): Promise<void> => {
   try {
@@ -30,7 +31,7 @@ const fetchFollowers = async (): Promise<void> => {
   }
 };
 
-const vOnSubscribe = async (folower: IFollower) => {
+const vOnSubscribe = async (folower: IFollower): Promise<void> => {
   try {
     const response = await axios.put<{ followers: string[] }>(
       `${API_BASE_URL}/subscribe`,
@@ -51,7 +52,7 @@ const vOnSubscribe = async (folower: IFollower) => {
 const vOnUnsubscribe = async (follower: IFollower): Promise<void> => {
   try {
     const response = await axios.put<{ followers: string[] }>(
-      `${API_BASE_URL}/subscribe`,
+      `${API_BASE_URL}/unsubscribe`,
       {
         userId: userId.value,
         pageId: follower._id,
@@ -73,6 +74,7 @@ onMounted(() => {
 
 <template>
   <v-container class="followers-page">
+    <NavigationDrawer :userId="userId" />
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
         >Подписчики</v-card-title

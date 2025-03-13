@@ -6,6 +6,7 @@ import { navigateTo as navigateTo } from "../router/routerService.ts";
 import axios from "axios";
 import { useRoute } from "vue-router";
 import type { ISubscription } from "../models/subscription";
+import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 const route = useRoute();
 const userRecipient = ref<string | null>(route.params.id.toString());
@@ -32,7 +33,6 @@ const fetchSubscriptions = async (): Promise<void> => {
 
 const vOnSubscribe = async (subscription: ISubscription): Promise<void> => {
   try {
-    console.log('folower._ids');
     const response = await axios.put(`${API_BASE_URL}/subscribe`, {
       userId: userId.value,
       pageId: subscription._id,
@@ -48,7 +48,7 @@ const vOnSubscribe = async (subscription: ISubscription): Promise<void> => {
 
 const vOnUnsubscribe = async (subscription: ISubscription): Promise<void> => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/subscribe`, {
+    const response = await axios.put(`${API_BASE_URL}/unsubscribe`, {
       userId: userId.value,
       pageId: subscription._id,
     });
@@ -68,10 +68,19 @@ onMounted(() => {
 
 <template>
   <v-container class="followers-page">
+    <NavigationDrawer :userId="userId" />
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
         >Подписки</v-card-title
       >
+      <v-card-actions class="justify-center">
+        <v-btn
+          color="primary"
+          @click="navigateTo(Pages.UserPage, { params: { id: userRecipient } })"
+        >
+          <v-icon left>mdi-arrow-left</v-icon> Назад
+        </v-btn>
+      </v-card-actions>
       <v-divider></v-divider>
 
       <v-card-text>
@@ -118,15 +127,6 @@ onMounted(() => {
           У пользователя пока нет подписок.
         </v-alert>
       </v-card-text>
-
-      <v-card-actions class="justify-center">
-        <v-btn
-          color="primary"
-          @click="navigateTo(Pages.UserPage, { params: { id: userRecipient } })"
-        >
-          <v-icon left>mdi-arrow-left</v-icon> Назад
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-container>
 </template>

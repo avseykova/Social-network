@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from "vue";
 import LikeButton from "./LikeButton.vue";
-import { LOCALHOST } from "../utils/constants.ts";
+import { LOCALHOST, USER_KEY } from "../utils/constants.ts";
+import { ref } from "vue";
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
 const props = defineProps<{
   post: any;
@@ -24,11 +26,15 @@ const emit = defineEmits(['likePost', 'deletePost']);
     <v-img
       v-if="post.image_url"
       :src="`${LOCALHOST}${post.image_url}`"
-      height="200"
+      max-height="400"
+      min-height="200"
+      width="100%"
+      class="my-4"
+      cover
     ></v-img>
 
     <LikeButton
-      :isLiked="post.likes.includes(post.user_id._id)"
+      :isLiked="post.likes.includes(userId)"
       :likesCount="post.likes.length"
       @toggleLike="emit('likePost', post)"
     />

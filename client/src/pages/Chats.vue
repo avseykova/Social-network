@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
-import { onMounted, shallowRef } from "vue";
+import { onMounted, ref, shallowRef } from "vue";
 import axios from "axios";
 import { LOCALHOST, USER_KEY } from "../utils/constants";
 import type { IChat } from "../models/chat.ts";
+import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 const chats = shallowRef<IChat[]>([]);
 const loading = shallowRef<boolean>(true);
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
 const vOnGoToDialogue = (chat: IChat) => {
   navigateTo(Pages.Messages, { params: { id: chat.receiver_id } });
@@ -16,7 +18,7 @@ const vOnGoToDialogue = (chat: IChat) => {
 const getChats = async () => {
   try {
     const response = await axios.post(`${LOCALHOST}/chats`, {
-      user_id: localStorage.getItem(USER_KEY),
+      user_id: userId.value,
     });
     chats.value = response.data.chats;
   } catch (error: any) {
@@ -34,6 +36,7 @@ onMounted(() => {
 
 <template>
   <v-container>
+    <NavigationDrawer :userId="userId" />
     <v-row>
       <v-col v-for="(chat, index) in chats" :key="index" cols="12">
         <v-card

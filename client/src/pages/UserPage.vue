@@ -160,8 +160,9 @@ const uploadAvatar = async (
 
 const vOnlikePost = async (post: IPost) => {
   try {
+    console.log("sadsad", userId.value);
     await axios.put(`${API_BASE_URL}/posts/like`, {
-      user_id: post.user_id._id,
+      user_id: userId.value, 
       postId: post._id,
     });
   } catch (error) {
@@ -220,6 +221,7 @@ const reloadPage = (userId: string | null) => {
   fetchPosts(userRecipient.value);
   pageRoom();
   socket.on('postUpdate', async (post: IPost) => {
+    console.log(post)
     const index = posts.value.findIndex((p) => p._id === post._id);
     if (index !== -1) {
       posts.value[index] = post;

@@ -107,7 +107,7 @@ io.on("connection", (socket) => {
 app.get("/users", async (req, res) => {
   try {
     const users = await User.find();
-    res.json(users);
+    res.json({ users });
   } catch (err) {
     res.status(500).json({ message: "Ошибка при получении пользователей" });
   }
@@ -521,7 +521,7 @@ app.put("/api/posts/like", async (req, res) => {
     }
 
     await post.save();
-    io.to(user_id).emit("postUpdate", post);
+    io.to(post.user_id._id.toString()).emit("postUpdate", post);
     res.json( post );
   } catch (error) {
     console.error("Ошибка при лайке поста:", error);
@@ -560,6 +560,37 @@ app.put("/api/subscribe", async (req, res) => {
   }
 });
 
+app.put("/api/unsubscribe", async (req, res) => {
+  try {
+    const {userId, pageId } = req.body;
+    console.log(userId, pageId)
+
+    const user = await User.findById(pageId);
+    if (!user) {
+      return res.status(404).json({ message: "Страница не найдена" });
+    }
+
+    const followerIndex = user.followers.indexOf(userId);
+
+    if (followerIndex === -1) {
+      user.followers.push(userId); 
+    } else {
+      user.followers.splice(followerIndex, 1);
+    }
+
+    await user.save();
+
+   
+    const subscriptions = await User.find({ followers: pageId }, "firstname surname avatarUrl");
+
+    res.json({ followers: user.followers, subscriptions: subscriptions });
+  } catch (error) {
+    console.error("Ошибка при подписке:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+});
+
+
 
 app.post("/api/feed", async (req, res) => {
   try {
@@ -570,7 +601,7 @@ app.post("/api/feed", async (req, res) => {
       return res.status(400).json({ message: "userId обязателен" });
     }
 
-    const subscribers = await User.find({ subscriptions: userId }, "_id");
+    const subscribers = await User.find({ followers: userId }, "_id");
 
     if (!subscribers.length) {
       return res.json({ message: "Нет постов в ленте", posts: [], totalPages: 0 });

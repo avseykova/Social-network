@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IFeedResponse } from "../models/feedResponse.ts";
-import { API_BASE_URL, LIMIT, USER_KEY } from "../utils/constants";
+import { API_BASE_URL, LIMIT, USER_KEY } from "../utils/constants.ts";
 import axios from "axios";
 import { onMounted, onUnmounted, ref } from "vue";
 import type { IPost } from "../models/userPost.ts";
