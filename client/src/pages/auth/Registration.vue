@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import type { IUserRegister } from "../../models/userRegister.ts";
 import type { IApiResponse } from "../../models/apiResponse.ts";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
@@ -22,13 +21,12 @@ const vOnRegister = async (): Promise<void> => {
   isError.value = false;
 
   try {
-    const userData: IUserRegister = {
+    
+    const response = await axios.post<IApiResponse>(`${API_BASE_URL}/register`,{
       username: username.value.trim(),
       email: email.value,
       password: password.value,
-    };
-
-    const response = await axios.post<IApiResponse>(`${API_BASE_URL}/register`, userData);
+    } );
 
     message.value = response.data.message || strings.loginSuccess;
     setTimeout(() => navigateTo(Pages.Login), 500);

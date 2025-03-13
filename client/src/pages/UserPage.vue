@@ -1,46 +1,50 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useRoute, onBeforeRouteUpdate } from "vue-router";
+import { io, Socket } from "socket.io-client";
+import axios from "axios";
+
+import SubscribeButton from "../components/SubscribeButton.vue";
+import EditProfileDialog from "../components/EditProfileDialog.vue";
+import PostCard from "../components/PostCard.vue";
+import NavigationDrawer from "../components/NavigationDrawer.vue";
+
 import { strings } from "../resources/strings.ts";
 import {
   DEFAULT_AVATAR,
   USER_KEY,
   LOCALHOST,
-  FIRSTNAME_KEY,
   API_BASE_URL,
 } from "../utils/constants.ts";
-import { navigateTo as navigateTo } from "../router/routerService.ts";
+import { navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
-import axios from "axios";
-import type { IPost } from "@/models/userPost.ts";
-import { io, Socket } from 'socket.io-client';
-import { useRoute } from 'vue-router';
+import type { IPost } from "../models/userPost.ts";
 
 const email = ref<string>('');
 const dialog = ref<boolean>(false);
 const avatarUrl = ref<string>(DEFAULT_AVATAR);
-const newAvatarUrl = ref<string>('');
-const selectedFile = ref<File | null>(null);
 const firstname = ref<string>('');
-const newFirstname = ref<string>('');
 const surname = ref<string>('');
-const newSurname = ref<string>('');
 const posts = ref<IPost[]>([]);
-const newPostContent = ref('');
+const subscriptions = ref<string[]>([]);
+const newPostContent = ref<string>('');
 const newPostImage = ref<File | null>(null);
 const route = useRoute();
-const userId = ref<string | null>(route.params.id.toString());
+const userRecipient = ref<string | null>(route.params.id.toString());
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const socket: Socket = io(LOCALHOST);
-const itIsMe = ref<boolean>(userId.value == localStorage.getItem(USER_KEY));
+const itIsMe = computed(() => userRecipient.value === userId.value);
+const followersCount = ref<number>(0);
+const subscriptionsCount = ref<number>(0);
+const subscriptionsList = ref<any[]>([]);
+const followers = ref<any[]>([]);
 
-
-
-const vOnhandleOk = async () => {
-  await uploadAvatar();
-  await updateUserBD();
+const vOnhandleOk = async (result: any) => {
+  const newAvatarUrl = await uploadAvatar(result.avatar);
+  await updateUserBD(result.firstname, result.surname, newAvatarUrl);
   await fetchUser();
   dialog.value = false;
 };
-
 
 const vOnaddPost = async () => {
   if (!newPostContent.value && !newPostImage.value) return;
@@ -52,7 +56,8 @@ const vOnaddPost = async () => {
     try {
       const uploadResponse = await axios.post<{ url: string }>(
         `${LOCALHOST}/upload`,
-        formData);
+        formData
+      );
       imageUrl = uploadResponse.data.url;
     } catch (error) {
       console.error('Ошибка загрузки изображения:', error);
@@ -61,7 +66,7 @@ const vOnaddPost = async () => {
 
   try {
     const response = await axios.post<IPost>(`${API_BASE_URL}/posts`, {
-      user_id: userId.value,
+      user_id: userRecipient.value,
       content: newPostContent.value,
       image_url: imageUrl,
     });
@@ -90,48 +95,45 @@ const vOnhandleFileChange = (event: Event) => {
   }
 };
 
-const vOnHandleLogout = () => {
-  localStorage.removeItem(USER_KEY);
-  navigateTo(Pages.Login);
-};
-
 const fetchUser = async (): Promise<void> => {
-
   try {
-    console.log(userId.value)
-    
-
-    if (!userId.value) {
+    if (!userRecipient.value) {
       navigateTo(Pages.Login);
       return;
     }
-    const response = await axios.post(
-      `${API_BASE_URL}/user-info`,
-      { user_id :userId.value  }
-    );
+    const response = await axios.post(`${API_BASE_URL}/user-info`, {
+      user_id: userRecipient.value,
+    });
 
     if (response.data) {
       firstname.value = response.data.firstname;
       surname.value = response.data.surname;
       email.value = response.data.email;
-      avatarUrl.value = response.data.avatarUrl || DEFAULT_AVATAR;
-      localStorage.setItem(FIRSTNAME_KEY, firstname.value);
+      avatarUrl.value = response.data.avatarUrl || '';
+      subscriptions.value = response.data.subscriptions;
+      subscriptionsList.value = response.data.subscriptions || [];
+      followers.value = response.data.followers;
+      followersCount.value = response.data.followers?.length || 0;
+      subscriptionsCount.value = response.data.subscriptions?.length || 0;
     }
 
-    console.log(strings.userPageLoaded)
+    console.log(strings.userPageLoaded);
   } catch (error) {
-    console.log(error instanceof Error ? error.message : strings.networkError)
+    console.log(error instanceof Error ? error.message : strings.networkError);
   }
 };
 
-const updateUserBD = async () => {
+const updateUserBD = async (
+  newFirstname: string | null,
+  newSurname: string | null,
+  newAvatarUrl: string | null
+) => {
   try {
-
     const response = await axios.put(`${LOCALHOST}/updateuser`, {
       user_id: localStorage.getItem(USER_KEY),
-      firstname: newFirstname.value || firstname.value,
-      surname: newSurname.value || surname.value,
-      avatarUrl: newAvatarUrl.value || avatarUrl.value,
+      firstname: newFirstname || firstname.value,
+      surname: newSurname || surname.value,
+      avatarUrl: newAvatarUrl || avatarUrl.value,
     });
 
     console.log('Аватар успешно обновлён:', response.data.message);
@@ -139,42 +141,30 @@ const updateUserBD = async () => {
     console.error('Ошибка:', error.response?.data?.error || error.message);
   }
 };
-
-const vOnFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target.files && target.files[0]) {
-    selectedFile.value = target.files[0];
-  }
-};
-
-const uploadAvatar = async () => {
-  if (!selectedFile.value) return;
-
+const uploadAvatar = async (
+  selectedFile: File | null
+): Promise<string | null> => {
+  if (!selectedFile) return null;
 
   const formData = new FormData();
-  formData.append('image', selectedFile.value);
+  formData.append('image', selectedFile);
 
   try {
-    const response = await axios.post(
-      `${LOCALHOST}/upload`,
-      formData
-    );
-
-    newAvatarUrl.value = `${LOCALHOST}${response.data.url}`;
+    const response = await axios.post(`${LOCALHOST}/upload`, formData);
+    return `${LOCALHOST}${response.data.url}`;
   } catch (error) {
     console.error('Ошибка загрузки:', error);
-  } finally {
+    return null;
   }
 };
-
 
 const vOnlikePost = async (post: IPost) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/posts/like`, {
-      user_id: post.user_id._id,
+    console.log("sadsad", userId.value);
+    await axios.put(`${API_BASE_URL}/posts/like`, {
+      user_id: userId.value, 
       postId: post._id,
     });
-    // post.likes = response.data.likes;
   } catch (error) {
     console.error('Ошибка при лайке поста:', error);
   }
@@ -184,52 +174,71 @@ const fetchPosts = async (userId: string | null) => {
   if (!userId) return;
 
   try {
-    const response = await axios.get<IPost[]>(`${API_BASE_URL}/posts/${userId}`);
+    const response = await axios.get<IPost[]>(
+      `${API_BASE_URL}/posts/${userId}`
+    );
     posts.value = response.data;
   } catch (error) {
     console.error('Ошибка загрузки постов:', error);
   }
 };
 
-onMounted(() => {
-  fetchUser();
-  fetchPosts(userId.value);
-  pageRoom();
-  socket.on('postUpdate', async (post: IPost) => {
-   
-        const index = posts.value.findIndex(p => p._id === post._id);
-    if (index !== -1) {
-      posts.value[index] = post; 
-    }
-  });
-});
+const vOnSubscribe = async () => {
+  try {
+    console.log(userId.value, userRecipient.value);
+    const response = await axios.put(`${API_BASE_URL}/subscribe`, {
+      userId: userId.value,
+      pageId: userRecipient.value,
+    });
 
-const pageRoom = (): void => {
-  if (userId.value) {
-    socket.emit('pageRoom', userId.value);
+    followers.value = response.data.followers || [];
+    subscriptions.value = response.data.subscriptions || [];
+
+    subscriptionsCount.value = subscriptions.value.length;
+    followersCount.value = followers.value.length;
+  } catch (error) {
+    console.error('Ошибка подписки:', error);
   }
 };
+const vOnGoToDialogue = () => {
+  navigateTo(Pages.Messages, { params: { id: userRecipient.value } });
+};
 
+onBeforeRouteUpdate((to, from) => {
+  if (to.params.id !== from.params.id) {
+    reloadPage(to.params.id.toString());
+  }
+});
+
+onMounted(() => {
+  let route = useRoute();
+  reloadPage(route.params.id.toString());
+});
+
+const reloadPage = (userId: string | null) => {
+  userRecipient.value = userId;
+  fetchUser();
+  fetchPosts(userRecipient.value);
+  pageRoom();
+  socket.on('postUpdate', async (post: IPost) => {
+    console.log(post)
+    const index = posts.value.findIndex((p) => p._id === post._id);
+    if (index !== -1) {
+      posts.value[index] = post;
+    }
+  });
+};
+
+const pageRoom = (): void => {
+  if (userRecipient.value) {
+    socket.emit('pageRoom', userRecipient.value);
+  }
+};
 </script>
 
 <template>
   <v-container class="fill-height d-flex">
-    <v-navigation-drawer app permanent class="custom-nav" width="200">
-      <v-list dense>
-        <v-list-item link @click="navigateTo(Pages.Chats)">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-chat</v-icon>
-            <v-list-item-title class="ml-2">Чаты</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="navigateTo(Pages.AllUsersPage)">
-          <v-list-item-content class="d-flex align-center">
-            <v-icon>mdi-account-group</v-icon>
-            <v-list-item-title class="ml-2">Пользователи</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
+    <NavigationDrawer :userId="userId" />
 
     <v-container
       class="flex-grow-1 d-flex flex-column align-center justify-center ml-6"
@@ -238,9 +247,10 @@ const pageRoom = (): void => {
         <v-card-title class="text-center text-h5"
           >{{ firstname }} {{ surname }}</v-card-title
         >
+
         <v-card-text class="d-flex flex-column align-center">
           <v-hover v-slot:default="{ isHovering, props }">
-            <div  class="image-container" v-bind="props">
+            <div class="image-container" v-bind="props">
               <v-img
                 class="rounded"
                 :src="avatarUrl"
@@ -248,7 +258,7 @@ const pageRoom = (): void => {
                 width="300"
                 cover
               >
-                <v-fade-transition v-if= "itIsMe">
+                <v-fade-transition v-if="itIsMe">
                   <v-btn
                     class="edit-btn"
                     v-if="isHovering"
@@ -263,37 +273,70 @@ const pageRoom = (): void => {
             </div>
           </v-hover>
         </v-card-text>
-        <v-card-text>
+        <v-card-text v-model="subscriptions">
           <p><strong>Name:</strong> {{ firstname }}</p>
           <p><strong>Surname:</strong> {{ surname }}</p>
           <p><strong>Email:</strong> {{ email }}</p>
-          <v-btn class="mt-4" block color="primary" @click="vOnHandleLogout">
-            Logout
+
+          <v-row class="mt-2 align-center">
+            <v-col cols="auto">
+              <v-btn
+                color="blue"
+                @click="
+                  navigateTo(Pages.SubscriptionsPage, {
+                    params: { id: userRecipient },
+                  })
+                "
+              >
+                <v-icon left>mdi-account-multiple</v-icon>
+                Подписки: {{ subscriptionsCount }}
+              </v-btn>
+            </v-col>
+
+            <v-col cols="auto">
+              <v-btn
+                color="green"
+                @click="
+                  navigateTo(Pages.FollowersPage, {
+                    params: { id: userRecipient },
+                  })
+                "
+              >
+                <v-icon left>mdi-account-heart</v-icon>
+                Подписчики: {{ followersCount }}
+              </v-btn>
+            </v-col>
+
+            <v-col cols="auto">
+              <SubscribeButton
+                v-if="!itIsMe"
+                :isSubscribed="followers.includes(userId!)"
+                @toggleSubscribe="vOnSubscribe"
+              />
+            </v-col>
+          </v-row>
+
+          <v-btn
+            v-if="!itIsMe"
+            class="edit-btn"
+            color="primary"
+            icon
+            @click="vOnGoToDialogue"
+            style="position: absolute; top: 16px; right: 16px"
+          >
+            <v-icon>mdi-message</v-icon>
           </v-btn>
         </v-card-text>
       </v-card>
 
-      <v-dialog v-if= "itIsMe" v-model="dialog" max-width="400">
-        <v-card >
-          <v-card-title>Редактировать профиль</v-card-title>
-          <v-card-text>
-            <v-text-field v-model="newFirstname" label="Имя"></v-text-field>
-            <v-text-field v-model="newSurname" label="Фамилия"></v-text-field>
-            <v-file-input
-              accept="image/*"
-              label="Выберите изображение"
-              @change="vOnFileChange"
-            ></v-file-input>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="red" @click="dialog = false">Отмена</v-btn>
-            <v-btn color="primary" @click="vOnhandleOk">OK</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+      <EditProfileDialog
+        v-if="itIsMe"
+        v-model:dialog="dialog"
+        :user="{ firstname: firstname, surname: surname, avatarUrl: avatarUrl }"
+        @save="vOnhandleOk"
+      />
 
-      <v-card v-if= "itIsMe" class="pa-4 mt-4 w-75">
+      <v-card v-if="itIsMe" class="pa-4 mt-4 w-75">
         <v-card-title>Создать пост</v-card-title>
         <v-card-text>
           <v-textarea
@@ -310,26 +353,14 @@ const pageRoom = (): void => {
       </v-card>
 
       <v-list class="mt-4 w-75">
-        <v-list-item v-for="(post, index) in posts" :key="index">
-          <v-card class="my-4 pa-3">
-            <v-card-title
-              >{{ post.user_id.firstname }}
-              {{ post.user_id.surname }}</v-card-title
-            >
-            <v-card-text>{{ post.content }}</v-card-text>
-            <v-img
-              v-if="post.image_url"
-              :src="`${LOCALHOST}${post.image_url}`"
-              height="200"
-            ></v-img>
-            <v-btn color="blue" @click="vOnlikePost(post)">
-          <v-icon v-if="post.likes.includes(userId!)">mdi-thumb-up</v-icon>
-          <v-icon v-else>mdi-thumb-up-outline</v-icon>
-           ({{ post.likes.length }})
-        </v-btn>
-            <v-btn v-if= "itIsMe" class="ml-3" color="red" @click="vOndeletePost(post._id)">Удалить</v-btn>
-          </v-card>
-        </v-list-item>
+        <PostCard
+          v-for="(post, index) in posts"
+          :key="index"
+          :post="post"
+          :isOwner="itIsMe"
+          @likePost="vOnlikePost"
+          @deletePost="vOndeletePost"
+        />
       </v-list>
     </v-container>
   </v-container>

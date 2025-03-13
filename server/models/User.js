@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password_hash: { type: String, required: true },
   avatar_url: { type: String, default: "" },
+  followers: { type: [String], default: [] },
   bio: { type: String, default: "" },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },

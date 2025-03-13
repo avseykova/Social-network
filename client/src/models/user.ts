@@ -6,3 +6,7 @@ export interface IUser {
     email: string;
     avatar_url: string;
   }
+
+  export interface IUsersResponse {
+    users: IUser[];
+  }

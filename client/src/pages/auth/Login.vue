@@ -29,11 +29,8 @@ const vOnLogin = async (): Promise<void> => {
     }
 
     message.value = response.data.message || strings.loginSuccess;
-
     setTimeout(() => navigateTo(Pages.UserPage, { params: { id: response.data.user_id } }), 500);
-
     localStorage.setItem(USER_KEY, response.data.user_id);
-    
     console.log("Успешный вход:", response.data);
 
   } catch (error: any) {
@@ -42,6 +39,7 @@ const vOnLogin = async (): Promise<void> => {
     console.error("Ошибка входа:", error);
   }
 };
+
 
 </script>
 
