@@ -20,10 +20,10 @@ export default function setupChatSocket(io) {
 
       try {
         const user = await User.findById(savedMessage.user_id);
-        savedMessage.username = user?.username || "Ошибка";
+        savedMessage.username = user?.username || "Erroe";
       } catch (error) {
-        console.error("Ошибка при получении пользователя:", error);
-        savedMessage.username = "Ошибка";
+        console.error("User retrieving error:", error);
+        savedMessage.username = "Error";
       }
 
       io.to(savedMessage.chat_id.toString()).emit("chatMessage", {
@@ -45,7 +45,7 @@ export default function setupChatSocket(io) {
           updatedMessage.username = user.username;
         }
       } catch (error) {
-        console.error("Ошибка при получении пользователя:", error);
+        console.error("User retrieving error:", error);
       }
 
       io.to(updatedMessage.chat_id).emit("messageUpdated", updatedMessage);

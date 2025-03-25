@@ -22,10 +22,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/upload", upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "Файл не загружен" });
+  if (!req.file) return res.status(400).json({ message: "File not uploaded" });
 
   const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ message: "Файл загружен", url: fileUrl });
+  res.json({ message: "File uploaded", url: fileUrl });
 });
 
 export default router;

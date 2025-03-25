@@ -34,13 +34,13 @@ export const updateUser = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ error: "Пользователь не найден" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ message: "Профиль обновлён" });
+    res.json({ message: "Profile updated" });
   } catch (error) {
-    console.error("Ошибка при обновлении профиля:", error);
-    res.status(500).json({ error: "Ошибка сервера" });
+    console.error("Profile update error", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -50,7 +50,7 @@ export const getFollowers = async (req, res) => {
     const page = await User.findById(userId);
 
     if (!page) {
-      return res.status(404).json({ message: "Пользователь не найден" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (!page.followers || page.followers.length === 0) {
@@ -64,8 +64,8 @@ export const getFollowers = async (req, res) => {
 
     res.json({ followers });
   } catch (error) {
-    console.error("Ошибка при получении подписчиков:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    console.error("Subscribers retrieving error", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -75,15 +75,15 @@ export const getSubscriptions = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ message: "Пользователь не найден" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const subscriptions = await User.find({ followers: userId }, "firstname surname email avatar_url followers");
 
     res.json({ subscriptions });
   } catch (error) {
-    console.error("Ошибка при подписке:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    console.error("Subscribe Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -93,7 +93,7 @@ export const toggleSubscribe = async (req, res) => {
     const user = await User.findById(pageId);
 
     if (!user) {
-      return res.status(404).json({ message: "Страница не найдена" });
+      return res.status(404).json({ message: "Page not found" });
     }
 
     const index = user.followers.indexOf(userId);
@@ -110,8 +110,8 @@ export const toggleSubscribe = async (req, res) => {
 
     res.json({ followers: user.followers, subscriptions });
   } catch (error) {
-    console.error("Ошибка при подписке:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    console.error("Subscribe error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -120,7 +120,7 @@ export const getAllUsers = async (req, res) => {
       const users = await User.find();
       res.json({ users });
     } catch (err) {
-      res.status(500).json({ message: "Ошибка при получении пользователей" });
+      res.status(500).json({ message: "Posts retrieving errror" });
     }
   };
 

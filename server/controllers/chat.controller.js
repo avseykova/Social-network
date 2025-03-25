@@ -47,7 +47,6 @@ export const getUserChats = async (req, res) => {
 
     res.json({ chats: uniquePartners });
   } catch (error) {
-    console.error("Ошибка:", error);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -56,7 +55,7 @@ export const getOrCreateChatMessages = async (req, res) => {
   const { sender_id, receiver_id } = req.query;
 
   if (!sender_id || !receiver_id) {
-    return res.status(400).json({ error: "Необходимо передать оба идентификатора пользователей." });
+    return res.status(400).json({ error: "Both user identifiers must be provided." });
   }
 
   try {
@@ -116,6 +115,6 @@ export const getOrCreateChatMessages = async (req, res) => {
     return res.json({ chatId, messages: messagesWithUsername });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Внутренняя ошибка сервера." });
+    return res.status(500).json({ error: "Internal Server Error." });
   }
 };

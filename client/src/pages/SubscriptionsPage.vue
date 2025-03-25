@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { Pages } from "../utils/pages.ts";
-import { API_BASE_URL, DEFAULT_AVATAR, USER_KEY } from "../utils/constants.ts";
+import { API_BASE_URL, DEFAULT_AVATAR } from "../utils/constants.ts";
 import { navigateTo as navigateTo } from "../router/routerService.ts";
 import axios from "axios";
 import { useRoute } from "vue-router";
 import type { ISubscription } from "../models/subscription";
+import { useAuthStore } from "../stores/auth";
 
 const route = useRoute();
 const userRecipient = ref<string | null>(route.params.id.toString());
-const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const subscriptionsCount = ref<number>(0);
 const subscriptions = ref<ISubscription[]>([]);
+const auth = useAuthStore();
 
 const fetchSubscriptions = async (): Promise<void> => {
   try {
@@ -33,7 +34,7 @@ const fetchSubscriptions = async (): Promise<void> => {
 const vOnSubscribe = async (subscription: ISubscription): Promise<void> => {
   try {
     const response = await axios.put(`${API_BASE_URL}/subscribe`, {
-      userId: userId.value,
+      userId: auth.userId,
       pageId: subscription._id,
     });
 
@@ -48,7 +49,7 @@ const vOnSubscribe = async (subscription: ISubscription): Promise<void> => {
 const vOnUnsubscribe = async (subscription: ISubscription): Promise<void> => {
   try {
     const response = await axios.put(`${API_BASE_URL}/unsubscribe`, {
-      userId: userId.value,
+      userId: auth.userId,
       pageId: subscription._id,
     });
 
@@ -102,17 +103,17 @@ onMounted(() => {
                 color="blue"
                 @click="
                   () =>
-                    subscription.followers.includes(userId!)
+                    subscription.followers.includes(auth.userId!)
                       ? vOnUnsubscribe(subscription)
                       : vOnSubscribe(subscription)
                 "
               >
-                <v-icon v-if="subscription.followers.includes(userId!)"
+                <v-icon v-if="subscription.followers.includes(auth.userId!)"
                   >mdi-account-check</v-icon
                 >
                 <v-icon v-else>mdi-account-plus</v-icon>
                 {{
-                  subscription.followers.includes(userId!)
+                  subscription.followers.includes(auth.userId!)
                     ? "Отписаться"
                     : "Подписаться"
                 }}

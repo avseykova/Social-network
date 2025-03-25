@@ -7,12 +7,12 @@ export const getFeed = async (req, res) => {
     const skip = (page - 1) * limit;
 
     if (!userId) {
-      return res.status(400).json({ message: "userId обязателен" });
+      return res.status(400).json({ message: "userId is required" });
     }
 
     const subscribers = await User.find({ followers: userId }, "_id");
     if (!subscribers.length) {
-      return res.json({ message: "Нет постов в ленте", posts: [], totalPages: 0 });
+      return res.json({ message: "No posts in the feed", posts: [], totalPages: 0 });
     }
 
     const subscriberIds = subscribers.map((user) => user._id);
@@ -31,7 +31,7 @@ export const getFeed = async (req, res) => {
       hasMore: page * limit < totalPosts,
     });
   } catch (error) {
-    console.error("Ошибка при загрузке ленты:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    console.error("Feed loading error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

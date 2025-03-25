@@ -1,5 +1,4 @@
 import { Post } from "../models/Post.js";
-import { User } from "../models/User.js";
 
 export const createPost = async (req, res) => {
   try {
@@ -10,7 +9,7 @@ export const createPost = async (req, res) => {
     const populatedPost = await Post.findById(newPost._id).populate("user_id", "firstname surname");
     res.status(201).json(populatedPost);
   } catch (error) {
-    res.status(500).json({ error: "Ошибка при создании поста" });
+    res.status(500).json({ error: "Error creating post" });
   }
 };
 
@@ -22,17 +21,17 @@ export const getUserPosts = async (req, res) => {
 
     res.json(posts);
   } catch (error) {
-    console.error("Ошибка при получении постов пользователя:", error);
-    res.status(500).json({ error: "Ошибка при получении постов пользователя" });
+    console.error("Error retrieving user's posts", error);
+    res.status(500).json({ error: "Error retrieving user's posts" });
   }
 };
 
 export const deletePost = async (req, res) => {
   try {
     await Post.findByIdAndDelete(req.params.postId);
-    res.json({ message: "Пост удалён" });
+    res.json({ message: "Post removed" });
   } catch (error) {
-    res.status(500).json({ error: "Ошибка при удалении поста" });
+    res.status(500).json({ error: "Error during post removing" });
   }
 };
 
@@ -40,7 +39,7 @@ export const likePost = async (req, res) => {
   try {
     const { user_id, postId } = req.body;
     const post = await Post.findById(postId).populate("user_id", "firstname surname avatar_url");
-    if (!post) return res.status(404).json({ message: "Пост не найден" });
+    if (!post) return res.status(404).json({ message: "Post not found" });
 
     const likeIndex = post.likes.indexOf(user_id);
     if (likeIndex === -1) {
@@ -56,7 +55,7 @@ export const likePost = async (req, res) => {
 
     res.json(post);
   } catch (error) {
-    console.error("Ошибка при лайке поста:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    console.error("Error during post like", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
