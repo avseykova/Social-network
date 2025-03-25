@@ -22,7 +22,7 @@ const getChats = async () => {
     });
     chats.value = response.data.chats;
   } catch (error: any) {
-    console.error('Ошибка:', error.response?.data?.error || error.message);
+    console.error('Error:', error.response?.data?.error || error.message);
   } finally {
     loading.value = false;
   }
@@ -62,7 +62,7 @@ onMounted(() => {
       </v-col>
     </v-row>
     <v-alert class="mt-4" v-if="!loading && chats.length === 0" type="warning">
-      Пользователей не найдено.
+      No users found.
     </v-alert>
   </v-container>
 </template>

@@ -28,7 +28,7 @@ const fetchPosts = async (): Promise<void> => {
     hasMore.value = response.data.hasMore;
     currentPage.value += 1;
   } catch (error) {
-    console.error('Ошибка загрузки постов:', error);
+    console.error('Posts loading error:', error);
   } finally {
     isLoading.value = false;
   }
@@ -46,7 +46,7 @@ const vOnLikePost = async (post: IPost): Promise<void> => {
       posts.value[index] = updatedPost;
     }
   } catch (error) {
-    console.error('Ошибка при лайке поста:', error);
+    console.error('Post like error:', error);
   }
 };
 

@@ -27,7 +27,7 @@ const fetchFollowers = async (): Promise<void> => {
       followersCount.value = response.data.followers.length;
     }
   } catch (error) {
-    console.error('Ошибка загрузки подписчиков:', error);
+    console.error('Subscribers loading error:', error);
   }
 };
 
@@ -45,7 +45,7 @@ const vOnSubscribe = async (folower: IFollower): Promise<void> => {
       folower.followers = response.data.followers;
     }
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscribe error:', error);
   }
 };
 
@@ -63,7 +63,7 @@ const vOnUnsubscribe = async (follower: IFollower): Promise<void> => {
       follower.followers = response.data.followers;
     }
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscribe error:', error);
   }
 };
 
@@ -76,7 +76,7 @@ onMounted(() => {
   <v-container class="followers-page">
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
-        >Подписчики</v-card-title
+        >Folowers</v-card-title
       >
       <v-card-actions class="justify-center">
         <v-btn
@@ -126,7 +126,7 @@ onMounted(() => {
           </v-list-item>
         </v-list>
         <v-alert v-else type="info" class="mt-4 text-center">
-          У пользователя пока нет подписчиков.
+          The user has no subscribers yet.
         </v-alert>
       </v-card-text>
     </v-card>

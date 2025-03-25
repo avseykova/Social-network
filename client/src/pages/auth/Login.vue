@@ -26,7 +26,7 @@ const vOnLogin = async (): Promise<void> => {
     });
 
     if (!response.data.user_id) {
-      throw new Error(`Ошибка: ${response.data.error || "Неизвестная ошибка"} username: ${response.data.user_id}`);
+      throw new Error(`Error: ${response.data.error || "Unknown error"} username: ${response.data.user_id}`);
     }
 
     message.value = response.data.message || strings.loginSuccess;
@@ -37,7 +37,7 @@ const vOnLogin = async (): Promise<void> => {
   } catch (error: any) {
     message.value = error.response?.data?.error || error.message || strings.networkError;
     isError.value = true;
-    console.error("Ошибка входа:", error);
+    console.error("Login error:", error);
   }
 };
 

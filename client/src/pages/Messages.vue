@@ -42,7 +42,7 @@ const loadMessages = async (): Promise<void> => {
     chat_id.value = response.data.chatId;
     await autoScroll();
   } catch (error) {
-    console.error('Ошибка загрузки сообщений:', error);
+    console.error('Messages loading error:', error);
   }
 };
 
@@ -70,7 +70,7 @@ const vOnEditMessage = async (): Promise<void> => {
     newMessage.value = '';
     editingMessage.value = null;
   } catch (error) {
-    console.error('Ошибка при редактировании сообщения:', error);
+    console.error('Message editing error:', error);
   }
 };
 
@@ -117,7 +117,7 @@ onMounted(async () => {
 <template>
   <v-container>
     <v-card class="pa-4" max-width="600" style="margin: auto">
-      <v-card-title>Чат</v-card-title>
+      <v-card-title>Chat</v-card-title>
 
       <div ref="messagesContainer" style="height: 300px; overflow-y: auto">
         <v-list>
@@ -136,14 +136,14 @@ onMounted(async () => {
       <v-card-actions>
         <v-text-field
           v-model="newMessage"
-          label="Введите сообщение..."
+          label="Enter message..."
           @keyup.enter="vOnSendMessage"
           outlined
           dense
           style="flex: 1"
         ></v-text-field>
         <v-btn color="primary" @click="vOnSendOrEditMessage">
-          {{ editingMessage ? "Обновить" : "Отправить" }}
+          {{ editingMessage ? "Update" : "Send" }}
         </v-btn>
       </v-card-actions>
     </v-card>

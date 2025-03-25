@@ -22,31 +22,31 @@ const vOnHandleLogout = () => {
       <v-list-item link @click="navigateTo(Pages.Home)">
         <v-list-item-content class="d-flex align-center">
           <v-icon>mdi-home</v-icon>
-          <v-list-item-title class="ml-2">Лента</v-list-item-title>
+          <v-list-item-title class="ml-2">Feed</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
       <v-list-item link @click="navigateTo(Pages.UserPage, { params: { id: userId } })">
         <v-list-item-content class="d-flex align-center">
           <v-icon>mdi-account</v-icon>
-          <v-list-item-title class="ml-2">Моя страница</v-list-item-title>
+          <v-list-item-title class="ml-2">My Page</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
       <v-list-item link @click="navigateTo(Pages.Chats)">
         <v-list-item-content class="d-flex align-center">
           <v-icon>mdi-chat</v-icon>
-          <v-list-item-title class="ml-2">Сообщения</v-list-item-title>
+          <v-list-item-title class="ml-2">Messages</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
       <v-list-item link @click="navigateTo(Pages.AllUsersPage)">
         <v-list-item-content class="d-flex align-center">
           <v-icon>mdi-account-group</v-icon>
-          <v-list-item-title class="ml-2">Пользователи</v-list-item-title>
+          <v-list-item-title class="ml-2">Users</v-list-item-title>
         </v-list-item-content>
       </v-list-item>
       <v-list-item link @click="vOnHandleLogout">
             <v-list-item-content class="d-flex align-center">
               <v-icon>mdi-logout</v-icon>
-              <v-list-item-title class="ml-2">Выйти</v-list-item-title>
+              <v-list-item-title class="ml-2">Logout</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
     </v-list>

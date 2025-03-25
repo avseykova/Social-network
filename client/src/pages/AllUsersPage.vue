@@ -23,7 +23,7 @@ const fetchUsers = async (): Promise<void> => {
       users.value = [];
     }
   } catch (error) {
-    console.error('Ошибка запроса пользователей', error);
+    console.error('Users loading error', error);
     users.value = [];
   } finally {
     loading.value = false;
@@ -60,7 +60,7 @@ onMounted(() => {
         </v-row>
 
         <v-alert class="mt-4" v-if="isEmpty" type="warning">
-          Пользователей не найдено.
+          No users found.
         </v-alert>
   </v-container>
 </template>

@@ -70,14 +70,14 @@ onMounted(() => {
   <v-container class="followers-page">
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
-        >Подписки</v-card-title
+        >Subscriptions</v-card-title
       >
       <v-card-actions class="justify-center">
         <v-btn
           color="primary"
           @click="navigateTo(Pages.UserPage, { params: { id: userRecipient } })"
         >
-          <v-icon left>mdi-arrow-left</v-icon> Назад
+          <v-icon left>mdi-arrow-left</v-icon> Back
         </v-btn>
       </v-card-actions>
       <v-divider></v-divider>
@@ -114,8 +114,8 @@ onMounted(() => {
                 <v-icon v-else>mdi-account-plus</v-icon>
                 {{
                   subscription.followers.includes(auth.userId!)
-                    ? "Отписаться"
-                    : "Подписаться"
+                    ? "Unsubscribe"
+                    : "Subscribe"
                 }}
               </v-btn>
             </v-col>
@@ -123,7 +123,7 @@ onMounted(() => {
         </v-list>
 
         <v-alert v-else type="info" class="mt-4 text-center">
-          У пользователя пока нет подписок.
+          The user has no subscriptions yet.
         </v-alert>
       </v-card-text>
     </v-card>

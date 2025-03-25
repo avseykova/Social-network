@@ -60,7 +60,7 @@ const vOnAddPost = async () => {
       );
       imageUrl = uploadResponse.data.url;
     } catch (error) {
-      console.error('Ошибка загрузки изображения:', error);
+      console.error('Image uploading error:', error);
     }
   }
 
@@ -75,7 +75,7 @@ const vOnAddPost = async () => {
     newPostContent.value = '';
     newPostImage.value = null;
   } catch (error) {
-    console.error('Ошибка добавления поста:', error);
+    console.error('Error adding post:', error);
   }
 };
 
@@ -84,7 +84,7 @@ const vOnDeletePost = async (postId: string) => {
     await axios.delete(`${API_BASE_URL}/posts/${postId}`);
     posts.value = posts.value.filter((post) => post._id !== postId);
   } catch (error) {
-    console.error('Ошибка удаления поста:', error);
+    console.error('Error removing post:', error);
   }
 };
 
@@ -136,9 +136,9 @@ const updateUserBD = async (
       avatarUrl: newAvatarUrl || avatarUrl.value,
     });
 
-    console.log('Аватар успешно обновлён:', response.data.message);
+    console.log('Avatar successfully updated:', response.data.message);
   } catch (error: any) {
-    console.error('Ошибка:', error.response?.data?.error || error.message);
+    console.error('Error:', error.response?.data?.error || error.message);
   }
 };
 const uploadAvatar = async (
@@ -153,20 +153,19 @@ const uploadAvatar = async (
     const response = await axios.post(`${LOCALHOST}/api/upload`, formData);
     return `${LOCALHOST}${response.data.url}`;
   } catch (error) {
-    console.error('Ошибка загрузки:', error);
+    console.error('Loading error:', error);
     return null;
   }
 };
 
 const vOnLikePost = async (post: IPost) => {
   try {
-    console.log("sadsad", auth.userId);
     await axios.put(`${API_BASE_URL}/posts/like`, {
       user_id: auth.userId, 
       postId: post._id,
     });
   } catch (error) {
-    console.error('Ошибка при лайке поста:', error);
+    console.error('Error while liking a post:', error);
   }
 };
 
@@ -179,7 +178,7 @@ const fetchPosts = async (userId: string | null) => {
     );
     posts.value = response.data;
   } catch (error) {
-    console.error('Ошибка загрузки постов:', error);
+    console.error('Error loading posts:', error);
   }
 };
 
@@ -196,7 +195,7 @@ const vOnSubscribe = async () => {
     subscriptionsCount.value = subscriptions.value.length;
     followersCount.value = followers.value.length;
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscription error:', error);
   }
 };
 const vOnGoToDialogue = () => {
@@ -285,7 +284,7 @@ const pageRoom = (): void => {
                 "
               >
                 <v-icon left>mdi-account-multiple</v-icon>
-                Подписки: {{ subscriptionsCount }}
+                Subscriptions: {{ subscriptionsCount }}
               </v-btn>
             </v-col>
 
@@ -299,7 +298,7 @@ const pageRoom = (): void => {
                 "
               >
                 <v-icon left>mdi-account-heart</v-icon>
-                Подписчики: {{ followersCount }}
+                Folowers: {{ followersCount }}
               </v-btn>
             </v-col>
 
@@ -333,18 +332,18 @@ const pageRoom = (): void => {
       />
 
       <v-card v-if="itIsMe" class="pa-4 mt-4 w-75">
-        <v-card-title>Создать пост</v-card-title>
+        <v-card-title>Create Post</v-card-title>
         <v-card-text>
           <v-textarea
             v-model="newPostContent"
-            label="Введите текст"
+            label="Enter text"
           ></v-textarea>
           <v-file-input
             accept="image/*"
-            label="Добавить изображение"
+            label="Attach image"
             @change="vOnHandleFileChange"
           ></v-file-input>
-          <v-btn color="primary" @click="vOnAddPost">Опубликовать</v-btn>
+          <v-btn color="primary" @click="vOnAddPost">Publish</v-btn>
         </v-card-text>
       </v-card>
 
