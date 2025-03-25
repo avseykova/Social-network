@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useAuthStore } from "../../stores/auth";
 import { validationRules } from "../../utils/validationRules.ts";
 import { strings } from "../../resources/strings.ts";
 import { Pages } from "../../utils/pages.ts";
 import { navigateTo } from "../../router/routerService";
 import type { ILoginResponse } from "../../models/loginResponse.ts";
-import { USER_KEY, API_BASE_URL } from "../../utils/constants.ts";
+import { API_BASE_URL } from "../../utils/constants.ts";
 import axios from "axios";
 
 const email = ref<string>('');
 const password = ref<string>('');
 const message = ref<string>('');
 const isError = ref<boolean>(false);
-
+const auth = useAuthStore();
 
 const vOnLogin = async (): Promise<void> => {
   message.value = '';
@@ -30,7 +31,7 @@ const vOnLogin = async (): Promise<void> => {
 
     message.value = response.data.message || strings.loginSuccess;
     setTimeout(() => navigateTo(Pages.UserPage, { params: { id: response.data.user_id } }), 500);
-    localStorage.setItem(USER_KEY, response.data.user_id);
+    auth.login(response.data.user_id);
     console.log("Успешный вход:", response.data);
 
   } catch (error: any) {

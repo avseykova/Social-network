@@ -6,7 +6,6 @@ import { navigateTo as navigateTo } from "../router/routerService.ts";
 import axios from "axios";
 import { useRoute } from "vue-router";
 import type { ISubscription } from "../models/subscription";
-import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 const route = useRoute();
 const userRecipient = ref<string | null>(route.params.id.toString());
@@ -68,7 +67,6 @@ onMounted(() => {
 
 <template>
   <v-container class="followers-page">
-    <NavigationDrawer :userId="userId" />
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
         >Подписки</v-card-title

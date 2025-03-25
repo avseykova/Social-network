@@ -7,7 +7,6 @@ import axios from "axios";
 import type { IChatMessageToView } from "../models/chatMessageToView";
 import type { IChatMessage } from "../models/chatMessage";
 import ChatMessage from "../components/ChatMessage.vue";
-import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 const socket: Socket = io(LOCALHOST);
 const messagesToView = ref<IChatMessageToView[]>([]);
@@ -15,7 +14,6 @@ const chat_id = ref<string>('');
 const newMessage = ref<string>('');
 const editingMessage = ref<IChatMessageToView | null>(null);
 const messagesContainer = ref<HTMLDivElement | null>(null);
-const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
 const autoScroll = async (): Promise<void> => {
   await nextTick();
@@ -118,7 +116,6 @@ onMounted(async () => {
 </script>
 <template>
   <v-container>
-    <NavigationDrawer :userId="userId" />
     <v-card class="pa-4" max-width="600" style="margin: auto">
       <v-card-title>Чат</v-card-title>
 

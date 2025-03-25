@@ -5,7 +5,7 @@ import { LOCALHOST, USER_KEY } from "../utils/constants.ts";
 import { ref } from "vue";
 const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
-const props = defineProps<{
+defineProps<{
   post: any;
   isOwner?: boolean;
 }>();

@@ -1,15 +1,17 @@
 <script setup lang="ts">
+import { useAuthStore } from "../stores/auth";
 import { Pages } from "../utils/pages.ts";
 import { navigateTo } from "../router/routerService.ts";
-import { defineProps } from "vue";
 import { USER_KEY } from "../utils/constants.ts";
+import { ref } from "vue";
 
-const props = defineProps<{
-  userId: string | null;
-}>();
+
+const userId = ref<string | null>(localStorage.getItem(USER_KEY));
+const auth = useAuthStore();
+
 
 const vOnHandleLogout = () => {
-  localStorage.removeItem(USER_KEY);
+  auth.logout();
   navigateTo(Pages.Login);
 };
 </script>
@@ -53,12 +55,9 @@ const vOnHandleLogout = () => {
 
 <style scoped>
 .custom-nav {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 100vh;
+  
   background-color: white;
   border-right: 1px solid #ddd;
-  z-index: 1000;
+ 
 }
 </style>
