@@ -44,20 +44,20 @@ const saveChanges = () => {
 <template>
   <v-dialog v-model="dialogModel" max-width="400">
     <v-card>
-      <v-card-title>Редактировать профиль</v-card-title>
+      <v-card-title>Edit profile</v-card-title>
       <v-card-text>
-        <v-text-field v-model="newFirstname" label="Имя"></v-text-field>
-        <v-text-field v-model="newSurname" label="Фамилия"></v-text-field>
+        <v-text-field v-model="newFirstname" label="Name"></v-text-field>
+        <v-text-field v-model="newSurname" label="Surname"></v-text-field>
 
         <div class="text-center mt-4">
           <v-avatar size="80">
-            <v-img :src="previewAvatar" alt="Аватар"></v-img>
+            <v-img :src="previewAvatar" alt="Avatar"></v-img>
           </v-avatar>
         </div>
 
         <v-file-input
           accept="image/*"
-          label="Выберите изображение"
+          label="Select image"
           @change="handleFileChange"
           dense
         ></v-file-input>
@@ -65,8 +65,8 @@ const saveChanges = () => {
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="red" @click="emit('update:dialog', false)">Отмена</v-btn>
-        <v-btn color="primary" @click="saveChanges">OK</v-btn>
+        <v-btn color="red" @click="emit('update:dialog', false)">Cancel</v-btn>
+        <v-btn color="primary" @click="saveChanges">Ok</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

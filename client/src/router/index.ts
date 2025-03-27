@@ -1,3 +1,4 @@
+import { USER_KEY } from "../utils/constants";
 import { Pages } from "../utils/pages";
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
 
@@ -26,6 +27,17 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+});
+
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem(USER_KEY);
+  const publicPages: string[] = [Pages.Login.name, Pages.Registration.name];
+
+  if (!publicPages.includes(to.name as string) && !isAuthenticated) {
+    next({ name: Pages.Login.name });
+  } else {
+    next();
+  }
 });
 
 export default router;

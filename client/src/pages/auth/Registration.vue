@@ -34,7 +34,7 @@ const vOnRegister = async (): Promise<void> => {
   } catch (error: any) {
     message.value = error.response?.data?.error || error.message || strings.networkError;
     isError.value = true;
-    console.error("Ошибка регистрации:", error);
+    console.error("Registration error:", error);
   }
 };
 </script>
