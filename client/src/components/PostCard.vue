@@ -5,7 +5,7 @@ import { LOCALHOST, USER_KEY } from "../utils/constants.ts";
 import { ref } from "vue";
 const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 
-const props = defineProps<{
+defineProps<{
   post: any;
   isOwner?: boolean;
 }>();
@@ -19,7 +19,7 @@ const emit = defineEmits(['likePost', 'deletePost']);
       {{ post.user_id.firstname }} {{ post.user_id.surname }}
     </v-card-title>
     <v-avatar v-if="post.user_id.avatar_url" size="40" class="mr-3">
-      <v-img :src="`${post.user_id.avatar_url}`" alt="Аватар"></v-img>
+      <v-img :src="`${post.user_id.avatar_url}`" alt="Avatar"></v-img>
     </v-avatar>
     <v-card-text>{{ post.content }}</v-card-text>
 
@@ -45,7 +45,7 @@ const emit = defineEmits(['likePost', 'deletePost']);
       color="red"
       @click="emit('deletePost', post._id)"
     >
-      Удалить
+      Remove
     </v-btn>
   </v-card>
 </template>

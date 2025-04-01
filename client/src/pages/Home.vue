@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import type { IFeedResponse } from "../models/feedResponse.ts";
-import { API_BASE_URL, LIMIT, USER_KEY } from "../utils/constants.ts";
+import { API_BASE_URL, LIMIT } from "../utils/constants.ts";
 import axios from "axios";
 import { onMounted, onUnmounted, ref } from "vue";
 import type { IPost } from "../models/userPost.ts";
-import NavigationDrawer from "../components/NavigationDrawer.vue";
 import PostCard from "../components/PostCard.vue";
+import { useAuthStore } from "../stores/auth";
 
-const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const currentPage = ref<number>(1);
 const isLoading = ref<boolean>(false);
 const hasMore = ref<boolean>(true);
 const posts = ref<IPost[]>([]);
+const auth = useAuthStore();
 
 const fetchPosts = async (): Promise<void> => {
-  if (!userId.value || isLoading.value || !hasMore.value) return;
+  if (!auth.userId || isLoading.value || !hasMore.value) return;
   isLoading.value = true;
 
   try {
     const response = await axios.post<IFeedResponse>(`${API_BASE_URL}/feed`, {
-      userId: userId.value,
+      userId: auth.userId,
       page: currentPage.value,
       LIMIT,
     });
@@ -28,16 +28,16 @@ const fetchPosts = async (): Promise<void> => {
     hasMore.value = response.data.hasMore;
     currentPage.value += 1;
   } catch (error) {
-    console.error('Ошибка загрузки постов:', error);
+    console.error('Posts loading error:', error);
   } finally {
     isLoading.value = false;
   }
 };
 
-const vOnlikePost = async (post: IPost): Promise<void> => {
+const vOnLikePost = async (post: IPost): Promise<void> => {
   try {
     const response = await axios.put<IPost>(`${API_BASE_URL}/posts/like`, {
-      user_id: userId.value,
+      user_id: auth.userId,
       postId: post._id,
     });
     const updatedPost = response.data;
@@ -46,7 +46,7 @@ const vOnlikePost = async (post: IPost): Promise<void> => {
       posts.value[index] = updatedPost;
     }
   } catch (error) {
-    console.error('Ошибка при лайке поста:', error);
+    console.error('Post like error:', error);
   }
 };
 
@@ -71,7 +71,6 @@ onUnmounted(() => {
 
 <template>
   <v-container class="fill-height d-flex">
-    <NavigationDrawer :userId="userId" />
 
     <v-container
       class="flex-grow-1 d-flex flex-column align-center justify-center ml-6"
@@ -81,7 +80,7 @@ onUnmounted(() => {
           v-for="(post, index) in posts"
           :key="index"
           :post="post"
-          @likePost="vOnlikePost"
+          @likePost="vOnLikePost"
         />
       </v-list>
 

@@ -2,13 +2,11 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 
-const filePath = fileURLToPath(import.meta.url);
-const dirPath = path.dirname(filePath);
 const router = express.Router();
+const rootDir = process.cwd();
 
-const uploadDir = path.join(dirPath, "uploads");
+const uploadDir = path.join(rootDir, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -24,19 +22,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/upload", upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "Файл не загружен" });
+  if (!req.file) return res.status(400).json({ message: "File not uploaded" });
 
   const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ message: "Файл загружен", url: fileUrl });
-});
-
-router.get("/avatar/:filename", (req, res) => {
-  const filePath = path.join(uploadDir, req.params.filename);
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).json({ message: "Файл не найден" });
-  }
+  res.json({ message: "File uploaded", url: fileUrl });
 });
 
 export default router;

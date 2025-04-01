@@ -7,19 +7,19 @@ import axios from "axios";
 import SubscribeButton from "../components/SubscribeButton.vue";
 import EditProfileDialog from "../components/EditProfileDialog.vue";
 import PostCard from "../components/PostCard.vue";
-import NavigationDrawer from "../components/NavigationDrawer.vue";
 
 import { strings } from "../resources/strings.ts";
 import {
   DEFAULT_AVATAR,
-  USER_KEY,
   LOCALHOST,
   API_BASE_URL,
 } from "../utils/constants.ts";
 import { navigateTo } from "../router/routerService.ts";
 import { Pages } from "../utils/pages.ts";
 import type { IPost } from "../models/userPost.ts";
+import { useAuthStore } from "../stores/auth";
 
+const auth = useAuthStore();
 const email = ref<string>('');
 const dialog = ref<boolean>(false);
 const avatarUrl = ref<string>(DEFAULT_AVATAR);
@@ -31,22 +31,22 @@ const newPostContent = ref<string>('');
 const newPostImage = ref<File | null>(null);
 const route = useRoute();
 const userRecipient = ref<string | null>(route.params.id.toString());
-const userId = ref<string | null>(localStorage.getItem(USER_KEY));
 const socket: Socket = io(LOCALHOST);
-const itIsMe = computed(() => userRecipient.value === userId.value);
+const itIsMe = computed(() => userRecipient.value === auth.userId);
 const followersCount = ref<number>(0);
 const subscriptionsCount = ref<number>(0);
 const subscriptionsList = ref<any[]>([]);
 const followers = ref<any[]>([]);
 
-const vOnhandleOk = async (result: any) => {
+const vOnHandleOk = async (result: any) => {
+  console.log(result.avatar);
   const newAvatarUrl = await uploadAvatar(result.avatar);
   await updateUserBD(result.firstname, result.surname, newAvatarUrl);
   await fetchUser();
   dialog.value = false;
 };
 
-const vOnaddPost = async () => {
+const vOnAddPost = async () => {
   if (!newPostContent.value && !newPostImage.value) return;
 
   let imageUrl = '';
@@ -55,12 +55,12 @@ const vOnaddPost = async () => {
     formData.append('image', newPostImage.value);
     try {
       const uploadResponse = await axios.post<{ url: string }>(
-        `${LOCALHOST}/upload`,
+        `${LOCALHOST}/api/upload`,
         formData
       );
       imageUrl = uploadResponse.data.url;
     } catch (error) {
-      console.error('Ошибка загрузки изображения:', error);
+      console.error('Image uploading error:', error);
     }
   }
 
@@ -75,20 +75,20 @@ const vOnaddPost = async () => {
     newPostContent.value = '';
     newPostImage.value = null;
   } catch (error) {
-    console.error('Ошибка добавления поста:', error);
+    console.error('Error adding post:', error);
   }
 };
 
-const vOndeletePost = async (postId: string) => {
+const vOnDeletePost = async (postId: string) => {
   try {
     await axios.delete(`${API_BASE_URL}/posts/${postId}`);
     posts.value = posts.value.filter((post) => post._id !== postId);
   } catch (error) {
-    console.error('Ошибка удаления поста:', error);
+    console.error('Error removing post:', error);
   }
 };
 
-const vOnhandleFileChange = (event: Event) => {
+const vOnHandleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length) {
     newPostImage.value = target.files[0];
@@ -129,16 +129,16 @@ const updateUserBD = async (
   newAvatarUrl: string | null
 ) => {
   try {
-    const response = await axios.put(`${LOCALHOST}/updateuser`, {
-      user_id: localStorage.getItem(USER_KEY),
+    const response = await axios.put(`${LOCALHOST}/api/updateuser`, {
+      user_id: auth.userId,
       firstname: newFirstname || firstname.value,
       surname: newSurname || surname.value,
       avatarUrl: newAvatarUrl || avatarUrl.value,
     });
 
-    console.log('Аватар успешно обновлён:', response.data.message);
+    console.log('Avatar successfully updated:', response.data.message);
   } catch (error: any) {
-    console.error('Ошибка:', error.response?.data?.error || error.message);
+    console.error('Error:', error.response?.data?.error || error.message);
   }
 };
 const uploadAvatar = async (
@@ -150,23 +150,22 @@ const uploadAvatar = async (
   formData.append('image', selectedFile);
 
   try {
-    const response = await axios.post(`${LOCALHOST}/upload`, formData);
+    const response = await axios.post(`${LOCALHOST}/api/upload`, formData);
     return `${LOCALHOST}${response.data.url}`;
   } catch (error) {
-    console.error('Ошибка загрузки:', error);
+    console.error('Loading error:', error);
     return null;
   }
 };
 
-const vOnlikePost = async (post: IPost) => {
+const vOnLikePost = async (post: IPost) => {
   try {
-    console.log("sadsad", userId.value);
     await axios.put(`${API_BASE_URL}/posts/like`, {
-      user_id: userId.value, 
+      user_id: auth.userId, 
       postId: post._id,
     });
   } catch (error) {
-    console.error('Ошибка при лайке поста:', error);
+    console.error('Error while liking a post:', error);
   }
 };
 
@@ -179,15 +178,14 @@ const fetchPosts = async (userId: string | null) => {
     );
     posts.value = response.data;
   } catch (error) {
-    console.error('Ошибка загрузки постов:', error);
+    console.error('Error loading posts:', error);
   }
 };
 
 const vOnSubscribe = async () => {
   try {
-    console.log(userId.value, userRecipient.value);
     const response = await axios.put(`${API_BASE_URL}/subscribe`, {
-      userId: userId.value,
+      userId: auth.userId,
       pageId: userRecipient.value,
     });
 
@@ -197,7 +195,7 @@ const vOnSubscribe = async () => {
     subscriptionsCount.value = subscriptions.value.length;
     followersCount.value = followers.value.length;
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscription error:', error);
   }
 };
 const vOnGoToDialogue = () => {
@@ -238,8 +236,6 @@ const pageRoom = (): void => {
 
 <template>
   <v-container class="fill-height d-flex">
-    <NavigationDrawer :userId="userId" />
-
     <v-container
       class="flex-grow-1 d-flex flex-column align-center justify-center ml-6"
     >
@@ -247,7 +243,6 @@ const pageRoom = (): void => {
         <v-card-title class="text-center text-h5"
           >{{ firstname }} {{ surname }}</v-card-title
         >
-
         <v-card-text class="d-flex flex-column align-center">
           <v-hover v-slot:default="{ isHovering, props }">
             <div class="image-container" v-bind="props">
@@ -289,7 +284,7 @@ const pageRoom = (): void => {
                 "
               >
                 <v-icon left>mdi-account-multiple</v-icon>
-                Подписки: {{ subscriptionsCount }}
+                Subscriptions: {{ subscriptionsCount }}
               </v-btn>
             </v-col>
 
@@ -303,14 +298,14 @@ const pageRoom = (): void => {
                 "
               >
                 <v-icon left>mdi-account-heart</v-icon>
-                Подписчики: {{ followersCount }}
+                Folowers: {{ followersCount }}
               </v-btn>
             </v-col>
 
             <v-col cols="auto">
               <SubscribeButton
                 v-if="!itIsMe"
-                :isSubscribed="followers.includes(userId!)"
+                :isSubscribed="followers.includes(auth.userId!)"
                 @toggleSubscribe="vOnSubscribe"
               />
             </v-col>
@@ -333,22 +328,22 @@ const pageRoom = (): void => {
         v-if="itIsMe"
         v-model:dialog="dialog"
         :user="{ firstname: firstname, surname: surname, avatarUrl: avatarUrl }"
-        @save="vOnhandleOk"
+        @save="vOnHandleOk"
       />
 
       <v-card v-if="itIsMe" class="pa-4 mt-4 w-75">
-        <v-card-title>Создать пост</v-card-title>
+        <v-card-title>Create Post</v-card-title>
         <v-card-text>
           <v-textarea
             v-model="newPostContent"
-            label="Введите текст"
+            label="Enter text"
           ></v-textarea>
           <v-file-input
             accept="image/*"
-            label="Добавить изображение"
-            @change="vOnhandleFileChange"
+            label="Attach image"
+            @change="vOnHandleFileChange"
           ></v-file-input>
-          <v-btn color="primary" @click="vOnaddPost">Опубликовать</v-btn>
+          <v-btn color="primary" @click="vOnAddPost">Publish</v-btn>
         </v-card-text>
       </v-card>
 
@@ -358,8 +353,8 @@ const pageRoom = (): void => {
           :key="index"
           :post="post"
           :isOwner="itIsMe"
-          @likePost="vOnlikePost"
-          @deletePost="vOndeletePost"
+          @likePost="vOnLikePost"
+          @deletePost="vOnDeletePost"
         />
       </v-list>
     </v-container>

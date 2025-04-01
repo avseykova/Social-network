@@ -5,3 +5,6 @@ export interface IFollower {
     avatar_url?: string;
     followers: string[];
   }
+export interface IFollowersResponse {
+    followers: IFollower[];
+  }

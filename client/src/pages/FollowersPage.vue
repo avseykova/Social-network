@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { Pages } from "../utils/pages.ts";
-import { API_BASE_URL, DEFAULT_AVATAR, USER_KEY } from "../utils/constants.ts";
+import { API_BASE_URL, DEFAULT_AVATAR } from "../utils/constants.ts";
 import { navigateTo as navigateTo } from "../router/routerService.ts";
 import axios from "axios";
 import { useRoute } from "vue-router";
 import type { IFollower, IFollowersResponse } from "../models/follower.ts";
-import NavigationDrawer from "../components/NavigationDrawer.vue";
+import { useAuthStore } from "../stores/auth";
 
 const route = useRoute();
 const userRecipient = ref<string | null>(route.params.id.toString());
 const followersCount = ref<number>(0);
 const followers = ref<IFollower[]>([]);
-const userId = ref<string | null>(localStorage.getItem(USER_KEY));
+const auth = useAuthStore();
 
 const fetchFollowers = async (): Promise<void> => {
   try {
@@ -27,7 +27,7 @@ const fetchFollowers = async (): Promise<void> => {
       followersCount.value = response.data.followers.length;
     }
   } catch (error) {
-    console.error('Ошибка загрузки подписчиков:', error);
+    console.error('Subscribers loading error:', error);
   }
 };
 
@@ -36,7 +36,7 @@ const vOnSubscribe = async (folower: IFollower): Promise<void> => {
     const response = await axios.put<{ followers: string[] }>(
       `${API_BASE_URL}/subscribe`,
       {
-        userId: userId.value,
+        userId: auth.userId,
         pageId: folower._id,
       }
     );
@@ -45,7 +45,7 @@ const vOnSubscribe = async (folower: IFollower): Promise<void> => {
       folower.followers = response.data.followers;
     }
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscribe error:', error);
   }
 };
 
@@ -54,7 +54,7 @@ const vOnUnsubscribe = async (follower: IFollower): Promise<void> => {
     const response = await axios.put<{ followers: string[] }>(
       `${API_BASE_URL}/unsubscribe`,
       {
-        userId: userId.value,
+        userId: auth.userId,
         pageId: follower._id,
       }
     );
@@ -63,7 +63,7 @@ const vOnUnsubscribe = async (follower: IFollower): Promise<void> => {
       follower.followers = response.data.followers;
     }
   } catch (error) {
-    console.error('Ошибка подписки:', error);
+    console.error('Subscribe error:', error);
   }
 };
 
@@ -74,10 +74,9 @@ onMounted(() => {
 
 <template>
   <v-container class="followers-page">
-    <NavigationDrawer :userId="userId" />
     <v-card class="followers-card">
       <v-card-title class="text-h5 font-weight-bold text-center"
-        >Подписчики</v-card-title
+        >Folowers</v-card-title
       >
       <v-card-actions class="justify-center">
         <v-btn
@@ -108,17 +107,17 @@ onMounted(() => {
                 color="blue"
                 @click="
                   () =>
-                    follower.followers.includes(userId!)
+                    follower.followers.includes(auth.userId!)
                       ? vOnUnsubscribe(follower)
                       : vOnSubscribe(follower)
                 "
               >
-                <v-icon v-if="follower.followers.includes(userId!)"
+                <v-icon v-if="follower.followers.includes(auth.userId!)"
                   >mdi-account-check</v-icon
                 >
                 <v-icon v-else>mdi-account-plus</v-icon>
                 {{
-                  follower.followers.includes(userId!)
+                  follower.followers.includes(auth.userId!)
                     ? "Отписаться"
                     : "Подписаться"
                 }}
@@ -127,7 +126,7 @@ onMounted(() => {
           </v-list-item>
         </v-list>
         <v-alert v-else type="info" class="mt-4 text-center">
-          У пользователя пока нет подписчиков.
+          The user has no subscribers yet.
         </v-alert>
       </v-card-text>
     </v-card>
